@@ -1,0 +1,35 @@
+# Objects of known size that can appear next to a fish.
+#
+# shape: rect (measured with a 4-corner homography), circle (ellipse major
+# axis = true diameter regardless of tilt), or cylinder (side view, height).
+# size_tolerance: relative manufacturing / wear tolerance.
+
+references:
+  dollar_bill:
+    label: US banknote
+    prompts: [dollar bill, banknote, paper money]
+    shape: rect
+    long_in: 6.14
+    short_in: 2.61
+    size_tolerance: 0.004
+  card:
+    label: ID-1 card (credit / driver's license)
+    prompts: [credit card, driver license, plastic card]
+    shape: rect
+    long_in: 3.370
+    short_in: 2.125
+    size_tolerance: 0.003
+  quarter:
+    label: US quarter
+    prompts: [coin, quarter]
+    shape: circle
+    long_in: 0.955
+    short_in: 0.955
+    size_tolerance: 0.003
+  soda_can:
+    label: 12 oz can
+    prompts: [soda can, beer can, aluminum can]
+    shape: cylinder
+    long_in: 4.83
+    short_in: 2.60
+    size_tolerance: 0.01
