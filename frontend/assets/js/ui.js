@@ -1,4 +1,4 @@
-// Small shared helpers: DOM, API, toasts, motion preference.
+// Small shared helpers: DOM, icons, API, toasts, motion preference.
 
 export const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 export const gsap = window.gsap;
@@ -11,7 +11,6 @@ export function h(tag, attrs = {}, ...children) {
 	for (const [k, v] of Object.entries(attrs)) {
 		if (v === null || v === undefined || v === false) continue;
 		if (k === "class") node.className = v;
-		else if (k === "html") node.innerHTML = v;
 		else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
 		else node.setAttribute(k, v === true ? "" : v);
 	}
@@ -29,6 +28,15 @@ export function svg(tag, attrs = {}) {
 	return node;
 }
 
+// An icon from the sprite in index.html.
+export function icon(name, cls = "i") {
+	const s = svg("svg", { class: cls, "aria-hidden": "true" });
+	const use = svg("use");
+	use.setAttribute("href", `#i-${name}`);
+	s.append(use);
+	return s;
+}
+
 export async function api(path, options = {}) {
 	const res = await fetch(path, options);
 	if (res.status === 204) return null;
@@ -38,27 +46,17 @@ export async function api(path, options = {}) {
 }
 
 export function toast(message, kind = "error", ms = 5200) {
-	const node = h("div", { class: `toast ${kind}`, role: "status" }, message);
+	const node = h("div", { class: `toast ${kind}`, role: "status" }, icon(kind === "ok" ? "check" : "alert"), h("span", {}, message));
 	$("#toasts").append(node);
-	if (gsap && !reduced) gsap.from(node, { x: 40, opacity: 0, duration: 0.4, ease: "power3.out" });
+	if (gsap && !reduced) gsap.from(node, { y: 12, opacity: 0, duration: 0.25, ease: "power2.out" });
 	setTimeout(() => {
-		if (gsap && !reduced) gsap.to(node, { x: 40, opacity: 0, duration: 0.3, onComplete: () => node.remove() });
+		if (gsap && !reduced) gsap.to(node, { opacity: 0, duration: 0.2, onComplete: () => node.remove() });
 		else node.remove();
 	}, ms);
 }
 
-// Tween helper that degrades to an instant set when motion is reduced or GSAP is missing.
-export function tween(target, vars) {
-	if (!gsap) return null;
-	if (reduced) {
-		const { duration, ease, stagger, delay, ...end } = vars;
-		return gsap.set(target, end);
-	}
-	return gsap.to(target, vars);
-}
-
 export function from(target, vars) {
 	if (!gsap) return null;
-	if (reduced) return gsap.from(target, { opacity: 0, duration: 0.2 });
+	if (reduced) return gsap.from(target, { opacity: 0, duration: 0.15 });
 	return gsap.from(target, vars);
 }

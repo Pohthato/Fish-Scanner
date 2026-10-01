@@ -4,7 +4,7 @@
 
 Based on **Dimension** by [HTML5 UP](https://html5up.net/dimension), released under
 [Creative Commons Attribution 3.0](https://html5up.net/license) (see `../LICENSE-dimension.txt`).
-Rebuilt without jQuery; restyled and animated with GSAP.
+Rebuilt without jQuery; restyled, with GSAP for motion.
 
 ## Background photos
 
@@ -24,4 +24,4 @@ Resized to 1920 px wide and re-encoded as WebP.
 
 - [GSAP](https://gsap.com) 3.13 — GSAP Standard License (free, including commercial use)
 - [Leaflet](https://leafletjs.com) 1.9.4 — BSD-2-Clause; map tiles © OpenStreetMap contributors
-- Fonts: Fraunces and Inter Tight (SIL Open Font License) via Google Fonts
+- Fonts: Inter and Inter Tight (SIL Open Font License) via Google Fonts

@@ -66,7 +66,7 @@ def test_table(case):
 def test_lingcod_range_straddling_limit_is_too_close():
     d = run("lingcod", length(22.1, spread=0.4), ocean("central"))
     assert d.verdict == Verdict.TOO_CLOSE_TO_CALL
-    assert "Too close" in d.reasons[0]
+    assert "overlaps" in d.reasons[0]
 
 
 def test_unknown_water_kind_uses_strictest():

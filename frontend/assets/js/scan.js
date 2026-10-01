@@ -1,19 +1,19 @@
-// Scan panel: photo -> location/date/gear -> streamed analysis -> results.
+// Scan panel: photo -> location/date/ruler -> streamed analysis -> report.
 import { readGps } from "./exif.js";
 import { gearItems, onGearChange } from "./gear.js";
-import { $, $$, api, from, gsap, h, reduced, svg, toast, tween } from "./ui.js";
+import { $, $$, api, from, gsap, h, icon, reduced, svg, toast } from "./ui.js";
 
 const MAX_BYTES = 25 * 1024 * 1024;
 
 const state = {
 	file: null,
 	previewUrl: null,
-	loc: null, // {lat, lon, source} | {water_id, name, source: "water"}
+	loc: null,       // {lat, lon, source} | {water_id, name, source: "water"}
 	mode: null,
 	gear: new Set(),
-	manual: [], // [{x, y}] normalized 0-1
-	speciesList: null,
-	lastForm: null,
+	manual: [],      // two points, normalized 0–1, picked on the form preview
+	extra: {},       // overrides carried into re-runs (species_id, ignore_refs, manual_scale)
+	speciesList: [],
 };
 
 let map = null;
@@ -22,109 +22,108 @@ let marker = null;
 // ------------------------------------------------------------------ stages
 
 function stage(name) {
-	const stages = { form: ".stage-form", busy: ".stage-busy", result: ".stage-result" };
-	const target = $(stages[name]);
-	const visible = $$(".stage").find((s) => !s.hidden);
-	const swap = () => {
-		$$(".stage").forEach((s) => { s.hidden = s !== target; });
-		from(target, { opacity: 0, y: 18, duration: 0.45, ease: "power3.out" });
-		window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
-	};
-	if (visible && visible !== target && gsap && !reduced) gsap.to(visible, { opacity: 0, y: -12, duration: 0.25, onComplete: () => { gsap.set(visible, { clearProps: "all" }); swap(); } });
-	else swap();
+	const target = $(`.stage-${name}`);
+	$$(".stage").forEach((s) => { s.hidden = s !== target; });
+	$("#scan-sub").textContent = {
+		form: "Upload a photo and tell us where and how you were fishing.",
+		busy: "Analyzing your photo. This takes a few seconds.",
+		result: "Results for your catch.",
+	}[name];
+	from(target, { opacity: 0, y: 8, duration: 0.3, ease: "power2.out" });
+	$("#scan").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
 }
 
 // ------------------------------------------------------------------ photo
 
 async function setFile(file) {
 	if (!file) return;
-	if (!file.type.startsWith("image/")) return toast("That isn't an image file.");
-	if (file.size > MAX_BYTES) return toast("Photo is larger than 25 MB.");
+	if (!file.type.startsWith("image/")) return toast("That file isn't an image.");
+	if (file.size > MAX_BYTES) return toast("Photos must be 25 MB or smaller.");
 	state.file = file;
+	state.extra = {};
 	if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
 	state.previewUrl = URL.createObjectURL(file);
 	$("#preview-img").src = state.previewUrl;
 	$("#busy-img").src = state.previewUrl;
+	$("#preview-name").textContent = file.name;
 	clearManual();
 	$("#dropzone").hidden = true;
 	$("#preview").hidden = false;
-	$("#fields").hidden = false;
-	from("#preview", { x: 40, opacity: 0, duration: 0.5, ease: "power3.out" });
-	from("#fields .field", { y: 16, opacity: 0, duration: 0.4, stagger: 0.06, delay: 0.15 });
+	$("#analyze").disabled = false;
+	from("#preview", { opacity: 0, duration: 0.3 });
 
 	const gps = await readGps(file);
-	$("#exif-badge").hidden = !gps;
 	if (gps && (!state.loc || state.loc.source === "exif")) setLocation({ ...gps, source: "exif" });
 }
 
 function resetPhoto() {
 	state.file = null;
+	state.extra = {};
 	$("#file").value = "";
 	$("#dropzone").hidden = false;
 	$("#preview").hidden = true;
-	$("#fields").hidden = true;
-	$("#exif-badge").hidden = true;
+	$("#analyze").disabled = true;
 	if (state.loc?.source === "exif") setLocation(null);
 }
 
 // ------------------------------------------------------------------ location
 
+function locStatus(text, kind = "") {
+	const el = $("#loc-label");
+	el.className = `loc-status ${kind}`;
+	el.replaceChildren(icon(kind === "set" ? "check" : kind === "warn" ? "alert" : "info"), h("span", {}, text));
+}
+
 async function setLocation(loc) {
 	state.loc = loc;
-	const label = $("#loc-label");
-	label.classList.remove("warn");
-	if (!loc) {
-		label.textContent = "No location yet — statewide rules will be shown.";
-		return;
-	}
-	if (loc.water_id) {
-		label.textContent = `📍 ${loc.name}`;
-		return;
-	}
+	if (!loc) return locStatus("No location set. Statewide rules will be used.");
+	if (loc.water_id) return locStatus(loc.name, "set");
 	if (map) placeMarker(loc.lat, loc.lon);
-	label.textContent = `📍 ${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)} …`;
+	locStatus(`${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}`, "set");
 	try {
 		const info = await api(`/api/locate?lat=${loc.lat}&lon=${loc.lon}`);
 		if (state.loc !== loc) return;
-		label.textContent = `📍 ${info.label}${loc.source === "exif" ? " (from photo)" : ""}`;
-		if (!info.in_california || info.mpa) label.classList.add("warn");
-		if (info.mpa?.no_take) label.textContent += " — no-take reserve";
+		let text = info.label + (loc.source === "exif" ? " (from photo GPS)" : "");
+		if (info.mpa?.no_take) text += ". No-take marine reserve.";
+		locStatus(text, !info.in_california || info.mpa ? "warn" : "set");
 	} catch {
-		label.textContent = `📍 ${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}`;
+		/* keep the coordinates */
 	}
 }
 
 function placeMarker(lat, lon) {
 	if (!map) return;
 	if (marker) marker.setLatLng([lat, lon]);
-	else marker = window.L.marker([lat, lon]).addTo(map);
+	else marker = window.L.circleMarker([lat, lon], { radius: 7, color: "#0A141B", weight: 2, fillColor: "#E9D8A6", fillOpacity: 1 }).addTo(map);
 	map.setView([lat, lon], Math.max(map.getZoom(), 9));
 }
 
 function toggleMap() {
 	const el = $("#map");
 	el.hidden = !el.hidden;
+	$("#toggle-map").classList.toggle("is-on", !el.hidden);
 	if (el.hidden) return;
 	if (!window.L) {
 		el.hidden = true;
-		return toast("The map needs an internet connection. Search for a water body instead.");
+		return toast("The map needs an internet connection. Search for a lake or river instead.");
 	}
 	if (!map) {
-		map = window.L.map(el, { zoomControl: true }).setView([37.2, -119.5], 6);
+		map = window.L.map(el, { zoomControl: true, attributionControl: true }).setView([37.2, -119.5], 6);
 		window.L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
 			maxZoom: 17, attribution: "© OpenStreetMap contributors",
 		}).addTo(map);
 		map.on("click", (e) => setLocation({ lat: e.latlng.lat, lon: e.latlng.lng, source: "pin" }));
 	}
-	setTimeout(() => map.invalidateSize(), 50);
+	setTimeout(() => map.invalidateSize(), 30);
 	if (state.loc?.lat) placeMarker(state.loc.lat, state.loc.lon);
 }
 
 function useMyLocation() {
 	if (!navigator.geolocation) return toast("Location isn't available in this browser.");
+	locStatus("Finding your location…");
 	navigator.geolocation.getCurrentPosition(
 		(p) => setLocation({ lat: p.coords.latitude, lon: p.coords.longitude, source: "pin" }),
-		() => toast("Couldn't get your location. Drop a pin or search a water body."),
+		() => { setLocation(state.loc); toast("Couldn't get your location. Drop a pin or search instead."); },
 		{ enableHighAccuracy: true, timeout: 10000 },
 	);
 }
@@ -139,17 +138,18 @@ function waterSearch() {
 		try {
 			const hits = await api(`/api/waters?q=${encodeURIComponent(q)}`);
 			list.replaceChildren(...hits.map((w) => h("li", {
+				role: "option",
 				onclick: () => {
 					setLocation({ water_id: w.id, name: w.name, source: "water" });
 					$("#water-q").value = w.name;
 					list.replaceChildren();
 				},
-			}, w.name, h("small", {}, `${w.county} Co. · ${w.kind}`))));
-			if (!hits.length) list.append(h("li", { class: "muted" }, "No match — drop a pin instead."));
+			}, h("span", {}, w.name), h("small", {}, `${w.county} County · ${w.kind}`))));
+			if (!hits.length) list.append(h("li", { class: "muted" }, "No matches. Drop a pin instead."));
 		} catch (e) {
 			toast(e.message);
 		}
-	}, 180);
+	}, 160);
 }
 
 // ------------------------------------------------------------------ gear / mode
@@ -157,16 +157,14 @@ function waterSearch() {
 function renderGearChips(items) {
 	const box = $("#gear-chips");
 	box.replaceChildren();
-	if (!items.length) {
-		box.append(h("span", { class: "muted" }, "No saved gear — add some under My Gear."));
-		return;
-	}
 	for (const g of items) {
-		const btn = h("button", { type: "button", class: `small ${state.gear.has(g.id) ? "is-on" : ""}` }, `${g.name} · ${g.length_in}″`);
+		const btn = h("button", { type: "button", class: `btn btn-secondary btn-sm ${state.gear.has(g.id) ? "is-on" : ""}`, "aria-pressed": String(state.gear.has(g.id)) },
+			`${g.name} · ${g.length_in} in`);
 		btn.addEventListener("click", () => {
-			if (state.gear.has(g.id)) state.gear.delete(g.id);
-			else state.gear.add(g.id);
-			btn.classList.toggle("is-on");
+			const on = !state.gear.has(g.id);
+			if (on) state.gear.add(g.id); else state.gear.delete(g.id);
+			btn.classList.toggle("is-on", on);
+			btn.setAttribute("aria-pressed", String(on));
 		});
 		box.append(btn);
 	}
@@ -183,73 +181,73 @@ function setupMode() {
 	}
 }
 
-// ------------------------------------------------------------------ manual scale (two clicks)
+// ------------------------------------------------------------------ two-point measuring (form)
 
+// Where the picture actually sits inside an <img> box (object-fit: contain).
 function imageBox(img) {
-	// Where the picture actually sits inside the <img> box (object-fit: contain).
 	const r = img.getBoundingClientRect();
 	const ratio = img.naturalWidth / img.naturalHeight;
-	let w = r.width, hgt = r.width / ratio;
-	if (hgt > r.height) { hgt = r.height; w = hgt * ratio; }
-	return { left: r.left + (r.width - w) / 2, top: r.top + (r.height - hgt) / 2, w, h: hgt, boxW: r.width, boxH: r.height };
+	let w = r.width, hh = r.width / ratio;
+	if (hh > r.height) { hh = r.height; w = hh * ratio; }
+	return { left: r.left + (r.width - w) / 2, top: r.top + (r.height - hh) / 2, w, h: hh, r };
 }
 
-function drawManual() {
-	const layer = $("#manual-layer");
-	const img = $("#preview-img");
+function drawPoints(layer, img, points) {
 	layer.replaceChildren();
 	if (!img.naturalWidth) return;
 	const b = imageBox(img);
-	const r = img.getBoundingClientRect();
-	layer.setAttribute("viewBox", `0 0 ${b.boxW} ${b.boxH}`);
-	const pts = state.manual.map((p) => [b.left - r.left + p.x * b.w, b.top - r.top + p.y * b.h]);
+	layer.setAttribute("viewBox", `0 0 ${b.r.width} ${b.r.height}`);
+	const pts = points.map((p) => [b.left - b.r.left + p.x * b.w, b.top - b.r.top + p.y * b.h]);
 	if (pts.length === 2) layer.append(svg("line", { x1: pts[0][0], y1: pts[0][1], x2: pts[1][0], y2: pts[1][1] }));
-	for (const [x, y] of pts) layer.append(svg("circle", { cx: x, cy: y, r: 6 }));
+	for (const [x, y] of pts) layer.append(svg("circle", { cx: x, cy: y, r: 5 }));
 }
 
 function clearManual() {
 	state.manual = [];
 	$(".preview-img").classList.remove("picking");
-	drawManual();
+	$("#manual-clear").hidden = true;
+	drawPoints($("#manual-layer"), $("#preview-img"), []);
 }
 
 function setupManual() {
+	const layer = $("#manual-layer");
 	$("#manual-start").addEventListener("click", () => {
+		if (!state.file) return toast("Add a photo first.");
 		state.manual = [];
-		drawManual();
+		drawPoints(layer, $("#preview-img"), []);
 		$(".preview-img").classList.add("picking");
 		toast("Click both ends of the object in the photo.", "ok", 3000);
 	});
-	$("#manual-clear").addEventListener("click", clearManual);
-	$("#manual-layer").addEventListener("click", (e) => {
+	layer.addEventListener("click", (e) => {
+		if (!$(".preview-img").classList.contains("picking")) return;
 		const b = imageBox($("#preview-img"));
 		const x = (e.clientX - b.left) / b.w, y = (e.clientY - b.top) / b.h;
 		if (x < 0 || x > 1 || y < 0 || y > 1) return;
 		state.manual.push({ x, y });
-		if (state.manual.length >= 2) {
-			state.manual = state.manual.slice(-2);
+		if (state.manual.length === 2) {
 			$(".preview-img").classList.remove("picking");
+			$("#manual-clear").hidden = false;
 			$("#manual-len").focus();
 		}
-		drawManual();
+		drawPoints(layer, $("#preview-img"), state.manual);
 	});
-	window.addEventListener("resize", drawManual);
+	$("#manual-clear").addEventListener("click", clearManual);
+	window.addEventListener("resize", () => drawPoints(layer, $("#preview-img"), state.manual));
 }
 
 // ------------------------------------------------------------------ analyze
 
-function buildForm(extra = {}) {
+function buildForm(extra) {
 	const fd = new FormData();
 	fd.append("image", state.file);
 	const loc = state.loc;
 	if (loc?.water_id) fd.append("water_id", loc.water_id);
 	else if (loc && loc.source !== "exif") { fd.append("lat", loc.lat); fd.append("lon", loc.lon); }
-	const date = $("#date").value;
-	if (date) fd.append("date", date);
+	if ($("#date").value) fd.append("date", $("#date").value);
 	if (state.mode) fd.append("mode", state.mode);
 	if (state.gear.size) fd.append("gear_ids", [...state.gear].join(","));
 	const len = parseFloat($("#manual-len").value);
-	if (state.manual.length === 2 && len > 0) {
+	if (!extra.manual_scale && state.manual.length === 2 && len > 0) {
 		const [a, b] = state.manual;
 		fd.append("manual_scale", JSON.stringify({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, length_in: len }));
 	}
@@ -258,13 +256,13 @@ function buildForm(extra = {}) {
 }
 
 async function analyze(extra = {}) {
-	if (!state.file) return toast("Choose a photo first.");
-	const button = $("#analyze");
-	button.disabled = true;
+	if (!state.file) return toast("Add a photo first.");
+	state.extra = { ...state.extra, ...extra };
+	$("#analyze").disabled = true;
 	$$("#rail li").forEach((li) => li.classList.remove("active", "done"));
 	stage("busy");
 	try {
-		const res = await fetch("/api/analyze/stream", { method: "POST", body: buildForm(extra) });
+		const res = await fetch("/api/analyze/stream", { method: "POST", body: buildForm(state.extra) });
 		if (!res.ok) {
 			const body = await res.json().catch(() => ({}));
 			throw new Error(body.error || `Upload failed (${res.status})`);
@@ -273,7 +271,7 @@ async function analyze(extra = {}) {
 		markStep(null);
 		if (!result.ok) {
 			stage("form");
-			return toast(result.message);
+			return toast(result.message, "error", 9000);
 		}
 		renderResult(result);
 		stage("result");
@@ -282,7 +280,7 @@ async function analyze(extra = {}) {
 		stage("form");
 		toast(e.message);
 	} finally {
-		button.disabled = false;
+		$("#analyze").disabled = !state.file;
 	}
 }
 
@@ -317,246 +315,274 @@ function markStep(step) {
 	}
 }
 
-// ------------------------------------------------------------------ results
+// ------------------------------------------------------------------ report
 
 const VERDICTS = {
-	KEEP: { word: "Keep", cls: "keep", icon: "check" },
-	TOO_CLOSE_TO_CALL: { word: "Too close to call", cls: "close", icon: "warn" },
-	UNCERTAIN_SPECIES: { word: "Confirm the species", cls: "close", icon: "question" },
-	CHECK_REGS: { word: "Check the rules", cls: "check", icon: "question" },
-	RELEASE_UNDERSIZED: { word: "Release — undersized", cls: "release", icon: "x" },
-	RELEASE_OVERSIZED: { word: "Release — oversized", cls: "release", icon: "x" },
-	PROHIBITED: { word: "Release — protected", cls: "release", icon: "x" },
-	SEASON_CLOSED: { word: "Release — season closed", cls: "release", icon: "x" },
-	MPA_NO_TAKE: { word: "Release — marine reserve", cls: "release", icon: "x" },
+	KEEP: { title: "Keep", tone: "keep", icon: "check", tag: "Keep" },
+	TOO_CLOSE_TO_CALL: { title: "Too close to call", tone: "close", icon: "ruler", tag: "Too close" },
+	UNCERTAIN_SPECIES: { title: "Confirm the species", tone: "close", icon: "help", tag: "Confirm" },
+	CHECK_REGS: { title: "Check the local rules", tone: "check", icon: "book", tag: "Check rules" },
+	RELEASE_UNDERSIZED: { title: "Release: undersized", tone: "release", icon: "x", tag: "Release" },
+	RELEASE_OVERSIZED: { title: "Release: oversized", tone: "release", icon: "x", tag: "Release" },
+	PROHIBITED: { title: "Release: protected species", tone: "release", icon: "x", tag: "Release" },
+	SEASON_CLOSED: { title: "Release: season closed", tone: "release", icon: "x", tag: "Release" },
+	MPA_NO_TAKE: { title: "Release: marine reserve", tone: "release", icon: "x", tag: "Release" },
 };
-const ICONS = {
-	check: "M8 17 L14 23 L25 10",
-	x: "M10 10 L22 22 M22 10 L10 22",
-	warn: "M16 7 L16 18 M16 24 L16 24.5",
-	question: "M11.5 11.5 a4.5 4.5 0 1 1 6.5 4 c-1.5 .8 -2 1.7 -2 3.5 M16 24 L16 24.5",
-};
+const NO_VERDICT = { title: "Choose the species", tone: "none", icon: "help", tag: "—" };
 const HAZARDS = {
 	venomous_spines: "Venomous spines", sharp_teeth: "Sharp teeth", sharp_gill_covers: "Sharp gill covers",
-	spines: "Sharp spines", barbels: "Stinging spines", toxic_skin: "Toxic roe/skin",
+	spines: "Sharp spines", barbels: "Stinging spines", toxic_skin: "Toxic roe",
 };
-const verdictTag = (v) => {
-	const info = VERDICTS[v] || { word: "Pick species", cls: "check" };
-	const short = { keep: "Keep", close: "Too close", check: "Check", release: "Release" }[info.cls] || "—";
-	return h("span", { class: `v v-${info.cls}` }, v === "UNCERTAIN_SPECIES" ? "Confirm" : short);
-};
+const MODES = { boat: "from a boat", shore: "from shore", dive: "diving" };
+
+const fmtIn = (v) => `${(+v).toFixed(1)} in`;
+const nameOf = (id) => state.speciesList.find((s) => s.id === id)?.name || id.replace(/_/g, " ");
 
 function renderResult(r) {
-	const banners = $("#banners");
-	banners.replaceChildren();
-	const place = r.place;
-	banners.append(h("div", { class: "banner info" },
-		`📍 ${place.label}`, place.source === "exif" ? " · from photo GPS" : "", " · ", new Date(r.date + "T12:00").toLocaleDateString()));
-	for (const w of place.warnings) banners.append(h("div", { class: "banner warn" }, w));
-	if (r.stale) banners.append(h("div", { class: "banner warn" }, `⚠ ${r.stale_message}`));
-	for (const n of r.scale_notes) banners.append(h("div", { class: "banner warn" }, n));
-	for (const n of r.notes) banners.append(h("div", { class: "banner info" }, n));
-
-	const box = $("#results");
-	box.replaceChildren(...r.fish.map((f) => fishCard(f, r)));
+	$("#results").replaceChildren(...r.fish.map((f, i) => fishSection(f, r, i)));
 	$("#disclaimer").textContent = r.disclaimer;
 }
 
-function fishCard(f, r) {
-	const card = h("section", { class: "fish-card" });
-	if (r.fish.length > 1) card.append(h("div", { class: "fish-head" }, h("span", { class: "num" }, `Fish #${f.number}`)));
-	card.append(verdictCard(f));
-	card.append(annotatedPhoto(f, r));
-	card.append(h("div", { class: "result-grid" }, gauge(f, r), speciesCard(f)));
-	if (f.regulations?.length) card.append(regsTable(f));
-	return card;
-}
-
-function verdictCard(f) {
-	const info = VERDICTS[f.verdict] || { word: "Pick the species", cls: "none", icon: "question" };
-	const icon = svg("svg", { viewBox: "0 0 32 32" });
-	const path = svg("path", { d: ICONS[info.icon], class: "glyph" });
-	icon.append(path);
-	return h("div", { class: `verdict tone-${info.cls}` },
-		h("div", { class: "wash" }),
-		h("div", { class: "icon" }, icon),
-		h("div", { class: "text" },
-			h("div", { class: "word" }, info.word),
-			h("ul", { class: "why" }, (f.reasons || []).map((t) => h("li", {}, t)))));
-}
-
-function annotatedPhoto(f, r) {
-	const { width: W, height: H } = r.image;
-	const wrap = h("div", { class: "annot" });
-	wrap.append(h("img", { src: `data:image/jpeg;base64,${r.image.jpeg}`, alt: `Fish ${f.number} outlined` }));
-	const s = svg("svg", { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: "none" });
-	const k = Math.max(W, H) / 900;
-	if (r.scale?.outline?.length > 1) {
-		const pts = r.scale.outline.map((p) => p.join(",")).join(" ");
-		s.append(svg(r.scale.source === "manual" ? "polyline" : "polygon",
-			{ points: pts, class: "ref draw", "stroke-width": 3 * k }));
-	}
-	if (f.outline?.length) {
-		s.append(svg("polygon", { points: f.outline.map((p) => p.join(",")).join(" "), class: "outline draw", "stroke-width": 3 * k }));
-	}
-	if (f.length) {
-		s.append(svg("polyline", { points: f.length.midline.map((p) => p.join(",")).join(" "), class: "midline draw", "stroke-width": 4 * k }));
-		for (const p of [f.length.snout, f.length.tail]) s.append(svg("circle", { cx: p[0], cy: p[1], r: 7 * k, class: "end", "stroke-width": 3 * k }));
-	}
-	wrap.append(s);
-	if (r.scale) wrap.append(h("span", { class: "caption" }, `Scale: ${r.scale.detail || r.scale.source}`));
-	return wrap;
-}
-
-// Limits to mark on the ruler: the most likely species first, plus the
-// governing lookalike's if it has different ones.
-function rulerLimits(f) {
+function notices(r) {
 	const out = [];
-	const seen = new Set();
-	const regs = f.regulations || [];
-	const add = (reg) => {
-		const s = reg?.size;
-		if (!s) return;
-		for (const [name, v] of [["min", s.min], ["max", s.max]]) {
-			if (v == null || seen.has(`${name}${v}`)) continue;
-			seen.add(`${name}${v}`);
-			out.push({ name, v, who: regs.length > 1 ? reg.name : "" });
-		}
-	};
-	add(regs[0]);
-	add(regs.find((x) => x.species === f.governing_species));
+	const add = (text, kind = "warn") => out.push(h("div", { class: `notice ${kind}` }, icon(kind === "warn" ? "alert" : "info"), h("span", {}, text)));
+	for (const w of r.place.warnings) add(w);
+	if (r.stale) add(r.stale_message);
+	for (const n of r.notes) add(n, "info");
 	return out;
 }
 
-function gauge(f, r) {
-	const panel = h("div", { class: "panel" }, h("h4", {}, "Length"));
+function fishSection(f, r, i) {
+	const v = VERDICTS[f.verdict] || NO_VERDICT;
+	const top = f.species?.[0];
+	const kicker = [r.fish.length > 1 ? `Fish ${f.number} of ${r.fish.length}` : null, top?.name].filter(Boolean).join(" · ");
+	return h("section", { class: "result" },
+		h("div", { class: `verdict tone-${v.tone}` },
+			h("span", { class: "verdict-icon" }, icon(v.icon)),
+			h("div", {},
+				kicker ? h("p", { class: "verdict-kicker" }, kicker) : null,
+				h("h3", { class: "verdict-title" }, v.title),
+				h("ul", { class: "verdict-reasons" }, (f.reasons || []).map((t) => h("li", {}, t))))),
+		i === 0 ? notices(r) : null,
+		h("div", { class: "result-body" },
+			h("div", { class: "result-photo" }, photoBlock(f, r)),
+			h("div", { class: "result-facts" }, facts(f, r))),
+		f.regulations?.length ? rulesBlock(f) : null);
+}
+
+// ---- photo with outline, midline and the ruler object
+
+function photoBlock(f, r) {
+	const { width: W, height: H } = r.image;
+	const k = Math.max(W, H) / 1000;
+	const wrap = h("div", { class: "annot" });
+	const img = h("img", { src: `data:image/jpeg;base64,${r.image.jpeg}`, alt: `Photo with fish ${f.number} outlined` });
+	const overlay = svg("svg", { class: "overlay", viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: "none" });
+	if (r.scale?.outline?.length > 1) {
+		const pts = r.scale.outline.map((p) => p.join(",")).join(" ");
+		overlay.append(svg(r.scale.source === "manual" ? "polyline" : "polygon", { points: pts, class: "ref draw", "stroke-width": 2.5 * k }));
+	}
+	if (f.outline?.length) overlay.append(svg("polygon", { points: f.outline.map((p) => p.join(",")).join(" "), class: "outline draw", "stroke-width": 2.5 * k }));
+	if (f.length) {
+		overlay.append(svg("polyline", { points: f.length.midline.map((p) => p.join(",")).join(" "), class: "midline draw", "stroke-width": 3 * k }));
+		for (const p of [f.length.snout, f.length.tail]) overlay.append(svg("circle", { cx: p[0], cy: p[1], r: 6 * k, class: "end", "stroke-width": 2.5 * k }));
+	}
+	const picks = svg("g");
+	overlay.append(picks);
+	wrap.append(img, overlay);
+
+	const legend = h("div", { class: "photo-legend" },
+		h("span", { style: "--c:#5FC3D4" }, "Outline"),
+		f.length ? h("span", { style: "--c:var(--accent)" }, "Measured length") : null,
+		r.scale?.outline?.length ? h("span", { style: "--c:var(--accent)" }, `Ruler: ${r.scale.detail || r.scale.source}`) : null);
+
+	// Measure by marking a known length on this photo.
+	const points = [];
+	const lenInput = h("input", { type: "number", min: 0.5, step: 0.01, placeholder: "Length", "aria-label": "Known length in inches" });
+	const markBtn = h("button", { type: "button", class: "btn btn-secondary btn-sm" }, icon("target"), "Mark two points");
+	const goBtn = h("button", { type: "button", class: "btn btn-primary btn-sm", disabled: true }, "Recalculate");
+	const drawPicks = () => {
+		picks.replaceChildren();
+		const pts = points.map((p) => [p.x * W, p.y * H]);
+		if (pts.length === 2) picks.append(svg("line", { x1: pts[0][0], y1: pts[0][1], x2: pts[1][0], y2: pts[1][1], class: "pick-line", "stroke-width": 2.5 * k }));
+		for (const [x, y] of pts) picks.append(svg("circle", { cx: x, cy: y, r: 6 * k, class: "pick-pt", "stroke-width": 2 * k }));
+		goBtn.disabled = !(points.length === 2 && parseFloat(lenInput.value) > 0);
+	};
+	lenInput.addEventListener("input", drawPicks);
+	markBtn.addEventListener("click", () => {
+		points.length = 0;
+		drawPicks();
+		wrap.classList.add("picking");
+		toast("Click both ends of the object in the photo.", "ok", 3000);
+	});
+	overlay.addEventListener("click", (e) => {
+		if (!wrap.classList.contains("picking")) return;
+		const b = img.getBoundingClientRect();
+		points.push({ x: (e.clientX - b.left) / b.width, y: (e.clientY - b.top) / b.height });
+		if (points.length === 2) { wrap.classList.remove("picking"); lenInput.focus(); }
+		drawPicks();
+	});
+	goBtn.addEventListener("click", () => {
+		const [a, b] = points;
+		analyze({ manual_scale: JSON.stringify({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, length_in: parseFloat(lenInput.value) }) });
+	});
+	const measure = h("div", { class: "measure-box" },
+		h("strong", {}, f.length ? "Measure against something else" : "Add a known length to measure this fish"),
+		h("p", {}, "Mark both ends of anything in the photo whose length you know, such as a rod handle, a can, or a cooler lid, then enter that length."),
+		h("div", { class: "manual-row" }, markBtn, h("label", { class: "input-unit" }, lenInput, h("span", {}, "in")), goBtn));
+
+	const blocks = [wrap, legend, measure];
+	if (r.scale?.source === "reference") {
+		blocks.push(h("p", { class: "inline-note" }, icon("info"),
+			h("span", {}, `Measured against the ${r.scale.detail} found in the photo. `,
+				h("button", { type: "button", class: "btn-link", onclick: () => analyze({ ignore_refs: "true" }) }, "Not a real one? Ignore it"))));
+	}
+	return blocks;
+}
+
+// ---- facts column
+
+function fact(label, ...content) {
+	return h("div", { class: "fact" }, h("dt", {}, label), h("dd", {}, ...content));
+}
+
+function facts(f, r) {
+	const dl = h("dl", { class: "facts" });
+	dl.append(speciesFact(f), lengthFact(f, r));
+	const gov = f.regulations?.find((x) => x.species === f.governing_species) || f.regulations?.[0];
+	if (gov) {
+		dl.append(fact("Limits",
+			h("div", { class: "fact-main" }, sizeText(gov.size)),
+			h("div", { class: "fact-sub" }, gov.bag?.daily != null ? `${gov.bag.daily} per day` : gov.bag?.note || "No specific bag limit"),
+			gov.species !== f.species?.[0]?.id ? h("div", { class: "fact-sub" }, `Rules for ${gov.name}, the strictest possibility`) : null));
+	}
+	const when = new Date(r.date + "T12:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+	dl.append(fact("Where & when",
+		h("div", { class: "fact-main" }, r.place.label),
+		h("div", { class: "fact-sub" }, [when, r.mode ? MODES[r.mode] : "fishing mode not set", r.place.source === "exif" ? "location from photo GPS" : null].filter(Boolean).join(" · "))));
+	return dl;
+}
+
+function speciesFact(f) {
+	const top = f.species?.[0];
+	const select = h("select", { "aria-label": "Choose the species" },
+		h("option", { value: "" }, "Choose a species…"),
+		state.speciesList.map((s) => h("option", { value: s.id }, `${s.name} (${s.scientific})`)));
+	const go = h("button", { type: "button", class: "btn btn-secondary btn-sm" }, "Apply");
+	go.addEventListener("click", () => select.value ? analyze({ species_id: select.value }) : toast("Choose a species from the list."));
+	const picker = h("div", { class: "pick", hidden: Boolean(top) }, select, go);
+	if (!top) return fact("Species", h("div", { class: "fact-main" }, "Not identified"), picker);
+
+	const parts = [h("div", { class: "fact-main" }, top.name, h("span", { class: "fact-sci" }, top.scientific))];
+	if (f.species_source === "manual") {
+		parts.push(h("div", { class: "fact-sub" }, "Chosen by you"));
+	} else if (f.species?.length) {
+		parts.push(h("ul", { class: "alts" }, f.species.map((s) => h("li", {},
+			h("span", {}, s.name), h("span", { class: "pct" }, `${Math.round(s.prob * 100)}%`),
+			h("span", { class: "bar" }, h("i", { "data-w": Math.max(1, Math.round(s.prob * 100)) }))))));
+	}
+	const flags = (top.hazards || []).map((z) => h("span", { class: "flag flag-warn" }, icon("alert"), HAZARDS[z] || z));
+	if (top.protected) flags.unshift(h("span", { class: "flag flag-warn" }, "Protected"));
+	if (flags.length) parts.push(h("div", { class: "flags" }, flags));
+	const look = (top.lookalikes || []).slice(0, 3);
+	if (look.length) parts.push(h("div", { class: "fact-sub" }, `Easily confused with ${look.map(nameOf).join(", ")}.`));
+	const reveal = h("button", { type: "button", class: "btn-link", style: "margin-top:8px" }, "Wrong species?");
+	reveal.addEventListener("click", () => { picker.hidden = false; reveal.remove(); select.focus(); });
+	parts.push(reveal, picker);
+	return fact("Species", ...parts);
+}
+
+function rulerLimits(f) {
+	const out = [];
+	const seen = new Set();
+	for (const reg of [f.regulations?.[0], f.regulations?.find((x) => x.species === f.governing_species)]) {
+		const s = reg?.size;
+		if (!s) continue;
+		for (const [kind, v] of [["min", s.min], ["max", s.max]]) {
+			if (v == null || seen.has(kind + v)) continue;
+			seen.add(kind + v);
+			out.push({ kind, v });
+		}
+	}
+	return out;
+}
+
+function lengthFact(f, r) {
 	const L = f.length;
 	if (!L) {
-		panel.append(h("p", { class: "muted" }, r.scale ? "This fish couldn't be measured." : "No scale available — add a reference object or use two clicks."));
-		return panel;
+		return fact("Length",
+			h("div", { class: "length-none" }, "Not measured"),
+			h("div", { class: "fact-sub" }, r.scale ? "The fish outline couldn't be measured." : "Nothing of known size was found in the photo. Use the measuring tool under the photo."));
 	}
 	const kind = L.kind === "FL" ? "fork length" : "total length";
-	panel.append(h("div", { class: "gauge" },
-		h("div", { class: "value" }, L.truncated ? `≥ ${L.low.toFixed(1)}` : L.value.toFixed(1), h("small", {}, ` in ${kind}`)),
-		h("div", { class: "muted" }, L.truncated ? "Fish runs off the edge of the photo" : `range ${L.low.toFixed(1)}–${L.high.toFixed(1)} in (95%)`)));
-
+	const value = L.truncated ? `≥ ${L.low.toFixed(1)}` : L.value.toFixed(1);
 	const limits = rulerLimits(f);
 	const hi = L.high ?? L.low * 1.25;
-	const top = Math.max(hi, ...limits.map((x) => x.v)) * 1.25 || 10;
-	const pct = (v) => `${Math.min(100, Math.max(0, (v / top) * 100))}%`;
-	const ruler = h("div", { class: "ruler" }, h("div", { class: "track" }), h("div", { class: "ticks" }));
-	const band = h("div", { class: "band", style: `left:${pct(L.low)};width:calc(${pct(hi)} - ${pct(L.low)})` });
-	ruler.append(band);
-	for (const { name, v, who } of limits) {
-		if (L.low < v && hi > v) {
-			const width = Math.min(Math.abs(v - L.low), Math.abs(hi - v)) * 0.9;
-			ruler.append(h("div", { class: "overlap", style: `left:calc(${pct(v)} - ${(width / top) * 50}%);width:${(width / top) * 100}%` }));
-		}
-		ruler.append(h("div", { class: "limit", style: `left:${pct(v)}`, title: who }, h("span", {}, `${name} ${v}″`)));
-	}
-	panel.append(ruler);
-	if (r.scale) panel.append(h("div", { class: "scale-src" }, `Scale from ${r.scale.source === "reference" ? r.scale.detail : r.scale.source}${r.scale.source === "depth" ? " (rough)" : ""}`));
-	return panel;
-}
-
-function speciesCard(f) {
-	const panel = h("div", { class: "panel" }, h("h4", {}, "Species"));
-	const top = f.species?.[0];
-	if (top) {
-		panel.append(h("div", { class: "sp-top" },
-			h("span", { class: "sp-name" }, top.name),
-			h("span", { class: "sp-sci" }, top.scientific)));
-		if (f.species_source === "model") {
-			panel.append(h("ul", { class: "bars" }, f.species.map((s) => h("li", {},
-				h("div", { class: "row" }, h("span", {}, s.name), h("span", {}, `${Math.round(s.prob * 100)}%`)),
-				h("div", { class: "bar" }, h("i", { "data-w": Math.round(s.prob * 100) }))))));
-		}
-		const hazards = (top.hazards || []).map((z) => h("span", { class: "hazard pulse" }, `⚠ ${HAZARDS[z] || z}`));
-		if (hazards.length) panel.append(h("div", { class: "hazards" }, hazards));
-		const look = (top.lookalikes || []).slice(0, 3);
-		if (look.length) panel.append(h("p", { class: "lookalike" }, `Often confused with: ${look.map(nameOf).join(", ")}. Check before keeping.`));
-	} else {
-		panel.append(h("p", { class: "muted" }, "Species not identified."));
-	}
-	panel.append(speciesPicker(f));
-	return panel;
-}
-
-function nameOf(id) {
-	const s = state.speciesList?.find((x) => x.id === id);
-	return s ? s.name : id.replace(/_/g, " ");
-}
-
-function speciesPicker(f) {
-	const select = h("select", { "aria-label": "Choose species" },
-		h("option", { value: "" }, f.species?.length ? "Not right? Choose the species…" : "Choose the species…"),
-		(state.speciesList || []).map((s) => h("option", { value: s.id }, `${s.name} — ${s.scientific}`)));
-	const go = h("button", { type: "button", class: "small" }, "Re-check");
-	go.addEventListener("click", () => {
-		if (!select.value) return toast("Pick a species from the list.");
-		analyze({ species_id: select.value });
-	});
-	return h("div", { class: "pick" }, select, go);
+	const top = Math.max(hi, ...limits.map((x) => x.v)) * 1.2 || 10;
+	const pct = (v) => `${Math.min(100, Math.max(0, (v / top) * 100)).toFixed(2)}%`;
+	const ruler = h("div", { class: "ruler", "aria-hidden": "true" }, h("div", { class: "track" }), h("div", { class: "ticks" }),
+		h("div", { class: "band", style: `left:${pct(L.low)};width:calc(${pct(hi)} - ${pct(L.low)})` }),
+		limits.map(({ kind: k, v }) => h("div", { class: `limit ${k}`, style: `left:${pct(v)}` }, h("span", {}, `${k} ${v}″`))));
+	const source = { reference: r.scale?.detail, gear: r.scale?.detail, manual: "your two points", depth: "a distance estimate (rough)" }[r.scale?.source] || r.scale?.source;
+	return fact("Length",
+		h("div", { class: "length-value" }, value, h("small", {}, `in ${kind}`)),
+		h("div", { class: "fact-sub" }, L.truncated ? "The fish runs off the edge of the photo." : `Likely between ${fmtIn(L.low)} and ${fmtIn(hi)}`),
+		ruler,
+		h("div", { class: "fact-sub" }, `Scale from ${source}`));
 }
 
 function sizeText(size) {
 	if (!size || (size.min == null && size.max == null)) return "No size limit";
-	const parts = [];
-	if (size.min != null) parts.push(`min ${size.min}″`);
-	if (size.max != null) parts.push(`max ${size.max}″`);
-	return `${parts.join(", ")} ${size.type || "TL"}`;
+	const t = size.type === "FL" ? "fork length" : "total length";
+	if (size.min != null && size.max != null) return `${size.min}–${size.max} in ${t}`;
+	if (size.min != null) return `At least ${size.min} in ${t}`;
+	return `Under ${size.max} in ${t}`;
 }
 
-function regsTable(f) {
-	const rows = f.regulations.map((reg) => h("tr", { class: reg.species === f.governing_species ? "governing" : "" },
-		h("td", {}, h("strong", {}, reg.name)),
-		h("td", {}, verdictTag(reg.verdict)),
-		h("td", {}, sizeText(reg.size)),
-		h("td", {}, reg.bag?.daily != null ? `${reg.bag.daily} / day` : "—", reg.bag?.note ? h("div", { class: "notes" }, reg.bag.note) : null),
-		h("td", { class: "cite" },
-			reg.citations.map((c) => h("a", { href: c.url, target: "_blank", rel: "noopener", title: `verified ${c.verified}` }, c.ccr)),
-			reg.notes?.length ? h("div", { class: "notes" }, reg.notes.join(" ")) : null)));
-	return h("table", { class: "regs" },
-		h("thead", {}, h("tr", {}, ["Species", "Verdict", "Size", "Bag", "Regulation"].map((t) => h("th", {}, t)))),
-		h("tbody", {}, rows));
+// ---- rules table
+
+function rulesBlock(f) {
+	const rows = f.regulations.map((reg) => {
+		const v = VERDICTS[reg.verdict] || NO_VERDICT;
+		return h("tr", {},
+			h("td", {}, reg.name),
+			h("td", {}, h("span", { class: `tag tag-${v.tone}` }, v.tag)),
+			h("td", { class: "nowrap" }, sizeText(reg.size)),
+			h("td", {}, reg.bag?.daily != null ? `${reg.bag.daily} per day` : "—", reg.bag?.note ? h("div", { class: "sub" }, reg.bag.note) : null),
+			h("td", {},
+				reg.citations.map((c) => h("a", { class: "cite", href: c.url, target: "_blank", rel: "noopener", title: `Verified ${c.verified}` }, c.ccr, icon("external"))),
+				reg.notes?.length ? h("div", { class: "sub" }, reg.notes.join(" ")) : null));
+	});
+	return h("div", { class: "rules" },
+		h("h3", {}, "Regulations applied"),
+		h("p", {}, f.regulations.length > 1 ? "Every species this could be is checked; the strictest result decides." : "Rules that apply to this species here and now."),
+		h("table", { class: "rules-table" },
+			h("thead", {}, h("tr", {}, ["Species", "Result", "Size", "Bag", "Source"].map((t) => h("th", {}, t)))),
+			h("tbody", {}, rows)));
 }
 
 function animateResult() {
-	if (!gsap) return;
-	$$(".bars i").forEach((i) => tween(i, { width: `${i.dataset.w}%`, duration: 1, ease: "power3.out", delay: 0.4 }));
-	if (reduced) return;
-	const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-	tl.from(".banner", { y: -10, opacity: 0, duration: 0.35, stagger: 0.06 })
-		.from(".verdict", { y: 20, opacity: 0, scale: 0.97, duration: 0.5, stagger: 0.15 }, "-=0.1")
-		.from(".verdict .wash", { scaleX: 0, duration: 0.8, ease: "power2.inOut" }, "<")
-		.from(".verdict .icon", { scale: 0, rotate: -90, duration: 0.6, ease: "back.out(2)" }, "<0.1");
-	for (const p of $$(".verdict .glyph")) {
-		const len = p.getTotalLength();
-		gsap.fromTo(p, { strokeDasharray: len, strokeDashoffset: len }, { strokeDashoffset: 0, duration: 0.6, delay: 0.6 });
-	}
-	// Outline, midline, snout and tail draw on in sequence.
-	let t = 0.5;
+	$$(".alts .bar i").forEach((i) => { i.style.width = `${i.dataset.w}%`; });
+	if (!gsap || reduced) return;
+	gsap.from(".alts .bar i", { width: 0, duration: 0.8, ease: "power2.out", delay: 0.2, stagger: 0.05 });
+	gsap.from(".verdict", { opacity: 0, x: -8, duration: 0.4, ease: "power2.out" });
+	gsap.from(".ruler .band", { scaleX: 0, duration: 0.8, ease: "power2.out", delay: 0.3 });
+	let t = 0.2;
 	for (const el of $$(".annot .draw")) {
 		const len = el.getTotalLength ? el.getTotalLength() : 1000;
-		gsap.fromTo(el, { strokeDasharray: len, strokeDashoffset: len, fillOpacity: 0 },
-			{ strokeDashoffset: 0, fillOpacity: 1, duration: 1.1, delay: t, ease: "power2.inOut", onComplete: () => gsap.set(el, { clearProps: "strokeDasharray,strokeDashoffset" }) });
-		t += 0.45;
+		gsap.fromTo(el, { strokeDasharray: len, strokeDashoffset: len }, {
+			strokeDashoffset: 0, duration: 0.9, delay: t, ease: "power1.inOut",
+			onComplete: () => gsap.set(el, { clearProps: "strokeDasharray,strokeDashoffset" }),
+		});
+		t += 0.3;
 	}
-	gsap.from(".annot .end", { scale: 0, transformOrigin: "50% 50%", duration: 0.4, delay: t, stagger: 0.15, ease: "back.out(3)" });
-	gsap.from(".ruler .band", { scaleX: 0, duration: 1.1, delay: 0.6, ease: "power3.out" });
-	gsap.from(".ruler .limit, .ruler .overlap", { opacity: 0, y: -6, duration: 0.4, delay: 1.2, stagger: 0.1 });
-	gsap.from(".panel", { y: 18, opacity: 0, duration: 0.5, stagger: 0.12, delay: 0.3 });
-	gsap.from(".regs tbody tr", { x: -24, opacity: 0, duration: 0.4, stagger: 0.07, delay: 0.9 });
+	gsap.from(".annot .end", { opacity: 0, duration: 0.3, delay: t });
 }
 
 function scanAnother() {
-	const go = () => {
-		resetPhoto();
-		$("#water-q").value = "";
-		stage("form");
-	};
-	if (gsap && !reduced) gsap.to(".stage-result > *", { opacity: 0, y: 16, duration: 0.25, stagger: 0.04, onComplete: () => { gsap.set(".stage-result > *", { clearProps: "all" }); go(); } });
-	else go();
+	resetPhoto();
+	$("#water-q").value = "";
+	stage("form");
 }
 
 // ------------------------------------------------------------------ init
@@ -570,7 +596,7 @@ export function initScan() {
 	for (const ev of ["dragleave", "drop"]) dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove("is-over"); });
 	dz.addEventListener("drop", (e) => setFile(e.dataTransfer.files[0]));
 	window.addEventListener("paste", (e) => {
-		const file = [...(e.clipboardData?.files || [])].find((f) => f.type.startsWith("image/"));
+		const file = [...(e.clipboardData?.files || [])].find((x) => x.type.startsWith("image/"));
 		if (file && $("#scan").classList.contains("active")) setFile(file);
 	});
 
@@ -578,6 +604,7 @@ export function initScan() {
 	$("#use-location").addEventListener("click", useMyLocation);
 	$("#toggle-map").addEventListener("click", toggleMap);
 	$("#water-q").addEventListener("input", waterSearch);
+	document.addEventListener("click", (e) => { if (!e.target.closest(".water-search")) $("#water-results").replaceChildren(); });
 	$("#analyze").addEventListener("click", () => analyze());
 	$("#again").addEventListener("click", scanAnother);
 	$("#date").value = new Date().toLocaleDateString("en-CA");

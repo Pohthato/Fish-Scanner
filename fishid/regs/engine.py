@@ -126,13 +126,13 @@ def _size_verdict(size: dict | None, length: Length | None, sp: Species) -> tupl
         note = [f"Measured {length.kind} but the limit is {kind}; treat the size check with caution."]
     low, high = length.low_in, length.high_in
     if lo_lim is not None and high < lo_lim:
-        return Verdict.RELEASE_UNDERSIZED, [f"Undersized: {length.display()} {length.kind}, minimum is {lo_lim} in {kind}."] + note
+        return Verdict.RELEASE_UNDERSIZED, [f"Measured {length.display()} {length.kind}; the minimum is {lo_lim} in {kind}."] + note
     if hi_lim is not None and low > hi_lim:
-        return Verdict.RELEASE_OVERSIZED, [f"Oversized: {length.display()} {length.kind}, maximum is {hi_lim} in {kind}."] + note
+        return Verdict.RELEASE_OVERSIZED, [f"Measured {length.display()} {length.kind}; the maximum is {hi_lim} in {kind}."] + note
     straddles = (lo_lim is not None and low < lo_lim) or (hi_lim is not None and (high > hi_lim or math.isinf(high)))
     if straddles:
-        return Verdict.TOO_CLOSE_TO_CALL, [f"Too close to call: {length.display()} overlaps the {limit_txt} {kind} limit. "
-                                           "Measure on a ruler before keeping."] + note
+        return Verdict.TOO_CLOSE_TO_CALL, [f"Measured {length.display()}, which overlaps the {limit_txt} {kind} limit. "
+                                           "Measure it on a ruler before keeping."] + note
     if length.truncated:
         return Verdict.TOO_CLOSE_TO_CALL, ["The fish runs off the edge of the photo, so its full length is unknown."]
     if length.rough:

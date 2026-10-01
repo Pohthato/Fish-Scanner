@@ -7,19 +7,42 @@
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<meta name="theme-color" content="#0B1F2A" />
+	<meta name="theme-color" content="#0A141B" />
 	<title>California Fish ID</title>
 	<meta name="description" content="Identify a California catch, measure it from a photo, and check the CDFW regulations." />
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-	<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet" />
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@500;600;700&display=swap" rel="stylesheet" />
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 	<link rel="stylesheet" href="assets/css/main.css" />
 	<link rel="icon" href="assets/img/logo.svg" type="image/svg+xml" />
 </head>
 <body class="is-preload">
 
-	<!-- Background slideshow -->
+	<!-- Icon set -->
+	<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+		<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+		<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11.2A7 7 0 0 1 19 9.8C19 14.9 12 21 12 21z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+		<symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></symbol>
+		<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></symbol>
+		<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+		<symbol id="i-ruler" viewBox="0 0 24 24"><rect x="2.5" y="8" width="19" height="8" rx="1.5"/><path d="M6.5 8v3M10.5 8v4M14.5 8v3M18.5 8v4"/></symbol>
+		<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+		<symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+		<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 21.5 20h-19z"/><path d="M12 10v4.5M12 17.2v.3"/></symbol>
+		<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .9-1 1.7M12 16.6v.3"/></symbol>
+		<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.3"/></symbol>
+		<symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-8.5 8.5M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+		<symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 6 8.5 12l6 6"/></symbol>
+		<symbol id="i-fish" viewBox="0 0 24 24"><path d="M2.5 12c3.4-4.7 10.2-5.6 14.5 0-4.3 5.6-11.1 4.7-14.5 0z"/><path d="m17 12 4.5-3.5v7z"/><circle cx="7" cy="11.3" r=".6" fill="currentColor"/></symbol>
+		<symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4.5h12.5V19H6.5A1.5 1.5 0 0 1 5 17.5z"/><path d="M5 17.5A1.5 1.5 0 0 1 6.5 16h11"/></symbol>
+		<symbol id="i-target" viewBox="0 0 24 24"><path d="M4 12h3M17 12h3"/><circle cx="7.5" cy="12" r="2"/><circle cx="16.5" cy="12" r="2"/><path d="M9.5 12h5" stroke-dasharray="1.5 1.5"/></symbol>
+		<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+		<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5"/></symbol>
+		<symbol id="i-edit" viewBox="0 0 24 24"><path d="m15 5 4 4L8.5 19.5H4.5v-4z"/></symbol>
+	</svg>
+
+	<!-- Background -->
 	<div id="bg" aria-hidden="true">
 		<div class="slide" data-src="assets/img/bg-owens-river.webp"></div>
 		<div class="slide" data-src="assets/img/bg-huntington-boat.webp"></div>
@@ -27,7 +50,6 @@
 		<div class="slide" data-src="assets/img/bg-huntington-pier.webp"></div>
 		<div class="slide" data-src="assets/img/bg-pismo-surf.webp"></div>
 		<div class="scrim"></div>
-		<div class="shimmer"></div>
 	</div>
 
 	<div id="wrapper">
@@ -36,35 +58,30 @@
 		<header id="header">
 			<div class="logo">
 				<svg viewBox="0 0 64 64" class="logo-mark" aria-hidden="true">
-					<path class="draw" d="M38 6 v26 a10 10 0 0 1 -20 0 v-4" />
+					<path class="draw" d="M38 8 v24 a10 10 0 0 1 -20 0 v-4" />
 					<path class="draw" d="M18 28 l-4 4" />
-					<path class="draw fish" d="M14 46 c8 -9 22 -9 32 0 c-10 9 -24 9 -32 0 z M46 46 l8 -6 v12 z" />
-					<circle class="draw eye" cx="21" cy="45" r="1.6" />
+					<path class="draw fish" d="M14 47 c8 -8.5 22 -8.5 32 0 c-10 8.5 -24 8.5 -32 0 z M46 47 l8 -5.5 v11 z" />
 				</svg>
 			</div>
 			<div class="content">
 				<div class="inner">
-					<h1 class="title" aria-label="California Fish ID">California Fish ID</h1>
-					<p class="tagline">Identify · Measure · Know the regs</p>
-					<ul class="chips">
-						<li class="chip" id="chip-date">Today</li>
-						<li class="chip" id="chip-verified">Regulations loading…</li>
-						<li class="chip" id="chip-species">California species</li>
-						<li class="chip">Fresh &amp; salt water</li>
-					</ul>
-					<ul class="stats">
-						<li><span class="num" data-count="0" id="stat-species">0</span><span class="lbl">species</span></li>
-						<li><span class="num" data-count="0" id="stat-rules">0</span><span class="lbl">rules loaded</span></li>
-						<li><span class="num" data-count="0" id="stat-waters">0</span><span class="lbl">waters &amp; MPAs mapped</span></li>
-					</ul>
+					<p class="eyebrow" id="eyebrow">California sport fishing · 2026 regulations</p>
+					<h1 class="title">California Fish ID</h1>
+					<p class="lede">Photograph your catch. Get the species, its length, and whether you can keep it under current CDFW rules, with the regulation cited.</p>
+					<dl class="stats">
+						<div><dt>Species</dt><dd id="stat-species">—</dd></div>
+						<div><dt>Rules</dt><dd id="stat-rules">—</dd></div>
+						<div><dt>Waters &amp; MPAs</dt><dd id="stat-waters">—</dd></div>
+						<div><dt>Verified</dt><dd id="stat-verified">—</dd></div>
+					</dl>
 				</div>
 			</div>
-			<nav>
+			<nav aria-label="Sections">
 				<ul>
-					<li><a href="#scan" class="magnetic">Scan</a></li>
-					<li><a href="#how" class="magnetic">How it works</a></li>
-					<li><a href="#gear" class="magnetic">My Gear</a></li>
-					<li><a href="#about" class="magnetic">About</a></li>
+					<li><a href="#scan" class="nav-primary">Scan a catch</a></li>
+					<li><a href="#how">How it works</a></li>
+					<li><a href="#gear">My gear</a></li>
+					<li><a href="#about">About</a></li>
 				</ul>
 			</nav>
 		</header>
@@ -73,165 +90,190 @@
 		<div id="main">
 
 			<!-- Scan -->
-			<article id="scan" aria-labelledby="scan-title">
-				<h2 class="major" id="scan-title">Scan a catch</h2>
+			<article id="scan" class="wide" aria-labelledby="scan-title">
+				<header class="panel-head">
+					<h2 id="scan-title">Scan a catch</h2>
+					<p class="panel-sub" id="scan-sub">Upload a photo and tell us where and how you were fishing.</p>
+				</header>
 
 				<section class="stage stage-form">
-					<label class="dropzone" id="dropzone" tabindex="0">
-						<input type="file" id="file" accept="image/*" hidden />
-						<svg class="hook-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 4 v20 a8 8 0 0 1 -16 0 v-3 M12 21 l-3 3" /></svg>
-						<span class="dz-title">Drop a photo of your fish</span>
-						<span class="dz-sub">or tap to choose · lay it flat, whole fish in frame · add a dollar bill or card for precise length</span>
-					</label>
-
-					<div class="preview" id="preview" hidden>
-						<div class="preview-img">
-							<img id="preview-img" alt="Your photo" />
-							<svg id="manual-layer" class="manual-layer" preserveAspectRatio="none"></svg>
-						</div>
-						<button type="button" class="link" id="change-photo">Choose a different photo</button>
-					</div>
-
-					<div class="fields" id="fields" hidden>
-						<div class="field">
-							<span class="label">Where</span>
-							<div class="loc-row">
-								<span class="badge" id="exif-badge" hidden>📍 From photo GPS</span>
-								<button type="button" class="small" id="use-location">Use my location</button>
-								<button type="button" class="small" id="toggle-map">Drop a pin</button>
-							</div>
-							<div id="map" class="map" hidden></div>
-							<div class="water-search">
-								<input type="search" id="water-q" placeholder="…or search a lake / river (e.g. Crowley, Castaic)" autocomplete="off" />
-								<ul class="water-results" id="water-results"></ul>
-							</div>
-							<p class="loc-label" id="loc-label">No location yet — statewide rules will be shown.</p>
-						</div>
-
-						<div class="field half">
-							<label class="label" for="date">Date caught</label>
-							<input type="date" id="date" />
-						</div>
-						<div class="field half">
-							<span class="label">Fishing from</span>
-							<div class="seg" id="mode" role="radiogroup">
-								<button type="button" data-mode="boat" role="radio">Boat</button>
-								<button type="button" data-mode="shore" role="radio">Shore</button>
-								<button type="button" data-mode="dive" role="radio">Diving</button>
-							</div>
-						</div>
-
-						<div class="field">
-							<span class="label">Gear in the photo <small>(used as a ruler)</small></span>
-							<div class="gear-chips" id="gear-chips"><span class="muted">No saved gear — add some under My Gear.</span></div>
-						</div>
-
-						<div class="field">
-							<details class="manual">
-								<summary>Measure with two clicks <small>(optional)</small></summary>
-								<p class="muted">Click both ends of something of known length in the photo, then enter its length.</p>
-								<div class="manual-row">
-									<button type="button" class="small" id="manual-start">Pick two points</button>
-									<input type="number" id="manual-len" min="0.5" step="0.01" placeholder="inches" />
-									<button type="button" class="link" id="manual-clear">clear</button>
+					<div class="scan-grid">
+						<div class="scan-photo">
+							<label class="dropzone" id="dropzone" tabindex="0">
+								<input type="file" id="file" accept="image/*" hidden />
+								<span class="dz-icon"><svg class="i"><use href="#i-upload"/></svg></span>
+								<span class="dz-title">Drop a photo, or click to browse</span>
+								<span class="dz-sub">JPEG, PNG or WebP, up to 25 MB</span>
+								<ul class="dz-tips">
+									<li>Fish lying flat, whole body in frame</li>
+									<li>A dollar bill or card beside it for an exact length</li>
+								</ul>
+							</label>
+							<figure class="preview" id="preview" hidden>
+								<div class="preview-img">
+									<img id="preview-img" alt="Your photo" />
+									<svg id="manual-layer" class="manual-layer" preserveAspectRatio="none"></svg>
 								</div>
-							</details>
+								<figcaption>
+									<span id="preview-name" class="muted"></span>
+									<button type="button" class="btn-link" id="change-photo">Replace</button>
+								</figcaption>
+							</figure>
 						</div>
 
-						<ul class="actions">
-							<li><button type="button" class="primary" id="analyze">Analyze catch</button></li>
-						</ul>
+						<div class="scan-form" id="fields">
+							<fieldset class="step">
+								<legend><span class="step-n">1</span>Location</legend>
+								<div class="loc-actions">
+									<button type="button" class="btn btn-secondary btn-sm" id="use-location"><svg class="i"><use href="#i-locate"/></svg>Use my location</button>
+									<button type="button" class="btn btn-secondary btn-sm" id="toggle-map"><svg class="i"><use href="#i-pin"/></svg>Drop a pin</button>
+								</div>
+								<div id="map" class="map" hidden></div>
+								<div class="input-icon water-search">
+									<svg class="i"><use href="#i-search"/></svg>
+									<input type="search" id="water-q" placeholder="Search a lake or river" autocomplete="off" aria-label="Search a lake or river" />
+									<ul class="water-results" id="water-results" role="listbox"></ul>
+								</div>
+								<p class="loc-status" id="loc-label"><svg class="i"><use href="#i-info"/></svg><span>No location set. Statewide rules will be used.</span></p>
+							</fieldset>
+
+							<fieldset class="step">
+								<legend><span class="step-n">2</span>When and how</legend>
+								<div class="row">
+									<label class="field">
+										<span class="field-label">Date caught</span>
+										<input type="date" id="date" />
+									</label>
+									<div class="field">
+										<span class="field-label" id="mode-label">Fishing from</span>
+										<div class="seg" id="mode" role="radiogroup" aria-labelledby="mode-label">
+											<button type="button" data-mode="boat" role="radio">Boat</button>
+											<button type="button" data-mode="shore" role="radio">Shore</button>
+											<button type="button" data-mode="dive" role="radio">Diving</button>
+										</div>
+									</div>
+								</div>
+								<p class="hint">Some groundfish and sheephead seasons apply only to boats.</p>
+							</fieldset>
+
+							<fieldset class="step">
+								<legend><span class="step-n">3</span>Ruler <span class="optional">optional</span></legend>
+								<p class="hint">A dollar bill, card, coin or can in the photo is found automatically. Otherwise, pick saved gear that appears in the photo, or mark a known length yourself.</p>
+								<div class="gear-chips" id="gear-chips"></div>
+								<div class="manual-row">
+									<button type="button" class="btn btn-secondary btn-sm" id="manual-start"><svg class="i"><use href="#i-target"/></svg>Mark two points</button>
+									<label class="input-unit"><input type="number" id="manual-len" min="0.5" step="0.01" placeholder="Length" aria-label="Known length in inches" /><span>in</span></label>
+									<button type="button" class="btn-link" id="manual-clear" hidden>Clear</button>
+								</div>
+							</fieldset>
+
+							<button type="button" class="btn btn-primary btn-block" id="analyze" disabled>Analyze catch</button>
+						</div>
 					</div>
 				</section>
 
-				<section class="stage stage-busy" hidden>
-					<div class="sonar-wrap">
-						<img id="busy-img" alt="" />
-						<div class="sonar"><span></span></div>
+				<section class="stage stage-busy" hidden aria-live="polite">
+					<div class="busy">
+						<div class="busy-photo">
+							<img id="busy-img" alt="" />
+							<div class="scanline"></div>
+						</div>
+						<ol class="progress" id="rail">
+							<li data-step="detect"><span class="dot"></span><div><strong>Finding the fish</strong><small>Outlining the fish and any reference object</small></div></li>
+							<li data-step="identify"><span class="dot"></span><div><strong>Identifying the species</strong><small>Comparing against California fish</small></div></li>
+							<li data-step="measure"><span class="dot"></span><div><strong>Measuring</strong><small>Snout to tail along the body</small></div></li>
+							<li data-step="regs"><span class="dot"></span><div><strong>Checking regulations</strong><small>Location, date, size and season</small></div></li>
+						</ol>
 					</div>
-					<ol class="rail" id="rail">
-						<li data-step="detect"><i></i>Detecting fish</li>
-						<li data-step="identify"><i></i>Identifying species</li>
-						<li data-step="measure"><i></i>Measuring</li>
-						<li data-step="regs"><i></i>Checking regulations</li>
-					</ol>
 				</section>
 
 				<section class="stage stage-result" hidden>
-					<div id="banners"></div>
 					<div id="results"></div>
-					<p class="disclaimer" id="disclaimer"></p>
-					<ul class="actions">
-						<li><button type="button" class="primary" id="again">Scan another</button></li>
-					</ul>
+					<footer class="result-foot">
+						<p class="disclaimer" id="disclaimer"></p>
+						<button type="button" class="btn btn-primary" id="again">Scan another catch</button>
+					</footer>
 				</section>
 			</article>
 
 			<!-- How it works -->
 			<article id="how" aria-labelledby="how-title">
-				<h2 class="major" id="how-title">How it works</h2>
-				<ol class="steps">
-					<li class="step">
-						<div class="step-icon">📷</div>
-						<h3>Photo</h3>
-						<p>The app finds every fish in the picture and outlines it, along with anything it can use as a ruler.</p>
+				<header class="panel-head">
+					<h2 id="how-title">How it works</h2>
+					<p class="panel-sub">Three steps, all on your own computer.</p>
+				</header>
+				<div class="panel-body">
+				<ol class="explain">
+					<li>
+						<span class="explain-icon"><svg class="i"><use href="#i-fish"/></svg></span>
+						<div><h3>Find and identify</h3><p>The fish is outlined and compared against 165 species known from California waters. Lookalikes with different rules are flagged.</p></div>
 					</li>
-					<li class="step">
-						<div class="step-icon">📏</div>
-						<h3>Measure</h3>
-						<p>It traces the fish's midline from snout to tail — curved fish included — and converts pixels to inches using the best scale it can find.</p>
+					<li>
+						<span class="explain-icon"><svg class="i"><use href="#i-ruler"/></svg></span>
+						<div><h3>Measure</h3><p>Length follows the fish's midline from snout to tail, curved or not, in total or fork length as CDFW measures that species. Pixels become inches using an object of known size.</p></div>
 					</li>
-					<li class="step">
-						<div class="step-icon">📘</div>
-						<h3>Regs</h3>
-						<p>The species, length, place and date are checked against the current CDFW rules, and every answer cites the section it came from.</p>
+					<li>
+						<span class="explain-icon"><svg class="i"><use href="#i-book"/></svg></span>
+						<div><h3>Apply the rules</h3><p>Species, length, place, date and fishing mode are checked against the current regulations. Every rule shown links to its section of Title 14.</p></div>
 					</li>
 				</ol>
-				<h3 class="major">Tips for a precise length</h3>
-				<ul class="tips">
-					<li><strong>Put a dollar bill or a credit card</strong> flat next to the fish, in the same plane. That gets you within about 3%.</li>
-					<li>Shoot from directly above, with the whole fish in frame and its mouth closed.</li>
-					<li>No reference? Save your rod handle or cooler lid under <a href="#gear">My Gear</a>, or use “Measure with two clicks”.</li>
-					<li>Without any reference the app guesses the distance from the photo itself. That guess can be far off, so it is never used to say a fish is legal size.</li>
-				</ul>
-				<h3 class="major">What the verdicts mean</h3>
-				<ul class="legend">
-					<li><span class="v v-keep">Keep</span> Legal species, size, season and place — as far as a photo can tell.</li>
-					<li><span class="v v-close">Too close</span> The measured range overlaps a size limit. Put it on a ruler.</li>
-					<li><span class="v v-check">Check rules</span> Depends on something a photo can't show (hatchery fin clip, local closures, MPA rules).</li>
-					<li><span class="v v-release">Release</span> Undersized, oversized, prohibited, out of season, or inside a no-take reserve.</li>
-				</ul>
+
+				<h3 class="section-title">Getting an exact length</h3>
+				<table class="spec-table">
+					<thead><tr><th>In the photo</th><th>Accuracy</th></tr></thead>
+					<tbody>
+						<tr><td>Dollar bill or credit card, flat beside the fish</td><td>about 2–3%</td></tr>
+						<tr><td>Saved gear, or two points you mark on a known length</td><td>about 3–5%</td></tr>
+						<tr><td>Nothing of known size</td><td>Not measured. One photo can't distinguish a small fish up close from a large fish farther away.</td></tr>
+					</tbody>
+				</table>
+
+				<h3 class="section-title">Verdicts</h3>
+				<dl class="legend">
+					<div><dt><span class="tag tag-keep">Keep</span></dt><dd>Legal species, size, season and location, as far as a photo can show.</dd></div>
+					<div><dt><span class="tag tag-close">Too close</span></dt><dd>The measured range overlaps a size limit, or there was no ruler. Measure it on a board.</dd></div>
+					<div><dt><span class="tag tag-check">Check rules</span></dt><dd>Depends on something a photo can't show, such as a hatchery fin clip or a marine protected area's allowed take.</dd></div>
+					<div><dt><span class="tag tag-release">Release</span></dt><dd>Undersized, oversized, protected, out of season, or inside a no-take reserve.</dd></div>
+				</dl>
+				</div>
 			</article>
 
 			<!-- My Gear -->
 			<article id="gear" aria-labelledby="gear-title">
-				<h2 class="major" id="gear-title">My Gear</h2>
-				<p>Things you often have in photos, with their exact length. When one shows up next to a fish, it's used as a ruler.</p>
+				<header class="panel-head">
+					<h2 id="gear-title">My gear</h2>
+					<p class="panel-sub">Objects you often photograph with your catch, with their exact length. When one appears next to a fish it's used as the ruler.</p>
+				</header>
+				<div class="panel-body">
 				<form id="gear-form" class="gear-form" autocomplete="off">
-					<input type="text" id="gear-name" placeholder="e.g. rod handle" maxlength="60" required />
-					<input type="number" id="gear-len" placeholder="length (in)" min="0.6" max="119" step="0.01" required />
-					<button type="submit" class="primary small">Add</button>
+					<label class="field grow"><span class="field-label">Name</span><input type="text" id="gear-name" placeholder="Rod handle" maxlength="60" required /></label>
+					<label class="field"><span class="field-label">Length</span><span class="input-unit"><input type="number" id="gear-len" min="0.6" max="119" step="0.01" required /><span>in</span></span></label>
+					<button type="submit" class="btn btn-primary"><svg class="i"><use href="#i-plus"/></svg>Add</button>
 				</form>
 				<ul class="gear-list" id="gear-list"></ul>
+				</div>
 			</article>
 
 			<!-- About -->
 			<article id="about" aria-labelledby="about-title">
-				<h2 class="major" id="about-title">About</h2>
-				<p>California Fish ID runs on your own computer. Photos never leave it.</p>
-				<ul class="about-list">
-					<li><strong>Detection:</strong> <span id="about-seg">SAM 3 or YOLOE</span> finds and outlines the fish and any reference object.</li>
-					<li><strong>Species:</strong> <span id="about-cls">BioCLIP 2</span>, limited to fish known from California.</li>
-					<li><strong>Length:</strong> midline of the fish outline, scaled by a dollar bill / card / coin / can, your saved gear, two clicks, or Depth Pro as a last resort.</li>
-					<li><strong>Regulations:</strong> entered by hand from the 2026 CDFW Ocean and Freshwater Sport Fishing Regulations, with section citations. Verified <span id="about-verified">—</span>.</li>
-				</ul>
-				<p class="disclaimer">Not legal advice — verify at <a href="https://wildlife.ca.gov/Regulations" target="_blank" rel="noopener">wildlife.ca.gov</a>. Regulations change in season; the app can be wrong about species or size. You are responsible for the fish you keep.</p>
+				<header class="panel-head">
+					<h2 id="about-title">About</h2>
+					<p class="panel-sub">Runs locally. Your photos never leave this computer.</p>
+				</header>
+				<div class="panel-body">
+				<dl class="about-list">
+					<div><dt>Detection</dt><dd id="about-seg">SAM 3 or YOLOE</dd></div>
+					<div><dt>Species</dt><dd id="about-cls">BioCLIP 2</dd></div>
+					<div><dt>Regulations</dt><dd>2026 CDFW Ocean and Freshwater Sport Fishing Regulations, entered by hand with section citations. Verified <span id="about-verified">—</span>.</dd></div>
+					<div><dt>Map data</dt><dd>CDFW Marine Protected Areas (ds582), U.S. Census county boundaries.</dd></div>
+				</dl>
+				<p class="disclaimer">Not legal advice. Regulations change during the season and the app can be wrong about a species or a length. Confirm at <a href="https://wildlife.ca.gov/Regulations" target="_blank" rel="noopener">wildlife.ca.gov</a>. You are responsible for any fish you keep.</p>
+				</div>
 			</article>
 		</div>
 
-		<!-- Footer -->
 		<footer id="footer">
-			<p class="copyright">Design: <a href="https://html5up.net" target="_blank" rel="noopener">HTML5 UP</a> · Photos: <a href="https://unsplash.com" target="_blank" rel="noopener">Unsplash</a> (see CREDITS) · Not legal advice</p>
+			<p>Design: <a href="https://html5up.net" target="_blank" rel="noopener">HTML5 UP</a> · Photography: <a href="https://unsplash.com" target="_blank" rel="noopener">Unsplash</a> · Not legal advice</p>
 		</footer>
 	</div>
 
