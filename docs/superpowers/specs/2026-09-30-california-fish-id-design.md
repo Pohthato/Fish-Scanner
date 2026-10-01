@@ -29,7 +29,7 @@ Catch log, standalone regulations browser, user accounts, Gemini/LLM calls, nati
 ## 2. Architecture
 
 ```
-browser (Velora UI static site) ──HTTP──► FastAPI (fishid/server.py)
+browser (Dimension-based static site) ──HTTP──► FastAPI (fishid/server.py)
                                               │
                                               ▼
                                     pipeline.analyze(image, location?, date, gear)
@@ -67,7 +67,7 @@ fishid/
     regs/2026/*.yaml
     geo/*.geojson
   user/gear.json         user's saved gear (gitignored)
-frontend/                Velora UI (MIT) customized; static export → frontend/out
+frontend/                HTML5 UP Dimension (CC BY 3.0), modernized; static files
 training/
   fetch_inat.py          GBIF/iNaturalist download for CA fish
   prepare.py             SAM 3 crop, dedupe, observer-split
@@ -144,18 +144,40 @@ If species confidence is below threshold **or** a plausible lookalike has differ
 Each rule file carries `verified`. Banner if >30 days old or the year has rolled over. `python -m fishid regs check` fetches CDFW in-season pages (groundfish, salmon, sturgeon) and reports pages changed since last verification; it never edits rules. Every result shows "Not legal advice — verify at wildlife.ca.gov."
 
 ## 7. Frontend
-- **Template:** [Velora UI](https://github.com/ColorlibHQ/velora-ui) by Colorlib — MIT, Next.js 16, React 19, Tailwind CSS 4, shadcn/ui, Motion; reduced-motion aware; dark mode; static export.
-- **Background:** looping ocean/fishing video from Pexels (Pexels License: free, no attribution) behind the hero, with a static poster image fallback and reduced-motion fallback. Clip chosen and its license page recorded during implementation.
-- **Pages:**
-  - **Home / Analyze:** Wavy/aurora hero with video background; File Drop component for the photo; optional location (EXIF auto, map pin, water-body search), date, gear selector; "click two points" scale tool when no reference is found.
-  - **Result:** color-coded verdict card; annotated image; species top-3 with confidence and lookalike notes; length range and scale source; regulations table (size, bag, possession, season, notes, CCR sections); hazard warnings; stale-data banner.
-  - **My Gear:** CRUD for saved gear lengths.
-- Unused template pages (pricing, blog, auth, changelog) removed.
-- Node is needed only to build `frontend/out`; FastAPI serves it as static files.
+- **Base template:** [Dimension](https://html5up.net/dimension) by HTML5 UP — CC BY 3.0 (credit "Design: HTML5 UP" kept in the footer). Plain HTML/CSS/JS, no build step; vendored into `frontend/` and served by FastAPI as static files. jQuery (if present in the downloaded version) is removed in favor of vanilla JS.
+- **Animation library:** [GSAP](https://gsap.com) (free for commercial use under the GSAP standard license, includes ScrollTrigger/SplitText). Everything respects `prefers-reduced-motion` (animations collapse to simple fades; background slideshow stops on one still).
+- **Modernization of the base:** larger display typography (e.g., "Inter Tight" / "Fraunces" pairing), 20–24 px rounded corners, frosted-glass panels (`backdrop-filter: blur`) with subtle inner highlight, deep-ocean palette (navy #0B1F2A, sea teal #1F7A8C, sand #E9D8A6, sunset coral #EE6C4D) plus verdict colors (keep green, too-close amber, release/prohibited red).
+
+### Background (realistic fishing photography only)
+- Crossfading slideshow of 4–5 realistic California fishing photos with slow Ken Burns zoom/pan (≈12 s each): angler casting from the Big Sur / Pacific coast at sunset, fly fishing an Eastern Sierra river at dawn, sportfishing boat off San Diego at first light, angler holding a catch on a pier or jetty, kayak angler in kelp.
+- Sourced from Unsplash/Pexels (free commercial use, no attribution required); each photo's source URL and license recorded in `frontend/assets/CREDITS.md`. No forests, illustrations, or AI-generated images.
+- Dark gradient scrim for text contrast; subtle drifting light-ray / water-shimmer overlay (pure CSS, non-interactive); gentle parallax on scroll only.
+
+### Elements & animation
+- **Header:** logo mark (hook + fish SVG) that draws itself on load (stroke animation); title with staggered letter reveal; tagline "Identify · Measure · Know the regs".
+- **Info chips** under the title: today's date, "Regulations verified <date>", "~150 California species", fresh/salt toggle hint — fade-up in sequence.
+- **Stats strip:** animated counters (species covered, rules loaded, water bodies mapped) triggered on load.
+- **Nav buttons** (Scan · How it works · My Gear · About) with magnetic hover and underline sweep; each opens a Dimension-style animated glass panel.
+- **Scan panel:** drag-and-drop zone with animated dashed border and pulsing hook icon; photo preview slides in; location (EXIF auto-detected badge, map pin, water-body search), date, and gear chips.
+- **Analyzing state:** sonar-sweep animation over the uploaded photo plus a 4-step progress rail (Detecting fish → Identifying species → Measuring → Checking regulations), each step checking off as the API responds (server streams progress via Server-Sent Events).
+- **Result panel** (staggered entrance):
+  - Verdict card with icon morph and color wash (KEEP / TOO CLOSE / RELEASE / PROHIBITED / CLOSED / MPA).
+  - Annotated photo where the outline, midline, and snout/tail points **draw on** in sequence; reference object highlighted.
+  - **Length gauge:** horizontal ruler bar animating to the measured range band, with the min/max/slot limit markers; overlap with a limit shown as an amber hatch.
+  - Species card: top-3 with confidence bars that fill, scientific name, lookalike callout, hazard badge with gentle pulse.
+  - Regulations table rows slide in; CCR citations as links; stale-data banner if applicable.
+  - "Scan another" resets with a reverse transition.
+- **How it works panel:** three animated steps (photo → measure → regs) with tips for adding a dollar bill / card for precise measurement.
+- **My Gear panel:** saved gear list with add/edit/delete; items animate in/out.
+- **Toasts** for errors (no fish found, bad reference, upload too large).
+
+### API wiring
+The page calls the JSON API below with `fetch`; `/api/analyze/stream` sends step-progress events; the final event carries the AnalysisResult.
 
 ### API
 | Method | Path | Purpose |
 |---|---|---|
+| POST | `/api/analyze/stream` | same inputs; Server-Sent Events: step progress then final AnalysisResult |
 | POST | `/api/analyze` | multipart image + optional lat/lon, water_body_id, date, gear_ids, manual_scale → AnalysisResult JSON (+ annotated image as base64 PNG) |
 | GET/POST/PUT/DELETE | `/api/gear` | saved gear |
 | GET | `/api/waters?q=` | water-body search |
@@ -185,6 +207,6 @@ Each rule file carries `verified`. Banner if >30 days old or the year has rolled
 ## 10. Risks
 - **Regulation data entry** is the largest manual effort and the main correctness risk; mitigated by citations, table tests, and freshness checks.
 - **CPU latency** of SAM 3 + Depth Pro; mitigated by OpenVINO or YOLOE swap behind the same interface.
-- **Velora UI is new** (low GitHub stars) though published by Colorlib; it is vendored into `frontend/`, so upstream changes don't affect us.
+- **Animation/background weight** on low-end phones; mitigated by reduced-motion handling, compressed WebP/AVIF photos (≤300 KB each), and lazy loading slides after the first.
 - **Dataset licensing** (CC-BY-NC) restricts commercial use until NC images are removed and the model retrained.
 - **Model licenses** (SAM 3, Depth Pro, BioCLIP 2) to be confirmed before any hosted/commercial deployment.
