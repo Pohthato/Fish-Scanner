@@ -18,3 +18,9 @@ fishid/user/
 *.safetensors
 frontend/out/
 frontend/.next/
+.venv/
+fishid/user/
+*.pt
+*.onnx
+training/data/
+training/runs/
