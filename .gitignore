@@ -1,0 +1,20 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# user data / model weights
+fishid/user/
+*.pt
+*.safetensors
+frontend/out/
+frontend/.next/
