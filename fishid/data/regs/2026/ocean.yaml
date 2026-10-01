@@ -1,0 +1,404 @@
+# Ocean and San Francisco Bay District sport fishing rules, 2026.
+# Entered by hand from the CDFW booklet and groundfish summary page below.
+# Every rule cites its CCR section. Re-check before relying on it.
+#
+# Rule fields
+#   species   species ids, "group:<name>" (see species.yaml groups), or "any"
+#   where     water: salt | fresh, ocean_area: [...], lat_min/lat_max/lon_min/lon_max,
+#             district: [...], county: [...], water_body: [...], water_kind: [...]
+#   season    closed windows: {from, to, status: closed, modes: [boat|shore|dive], note}
+#             dates are MM-DD or tokens (last-sat-apr, fri-before-last-sat-apr,
+#             sat-before-memorial-day, fri-before-sat-before-memorial-day, last-day-feb)
+#   periods   date windows that change size/bag: {from, to, size, bag, note}
+#   size      {min, max, type: TL|FL}  (an empty size {} means "no size limit")
+#   bag       {daily, note}
+#   prohibited  true: may not be kept at any time
+#   check     the app can't confirm legality (quota, hatchery marks, local closures)
+
+meta:
+  title: 2026 California Ocean Sport Fishing Regulations
+  url: https://nrm.dfg.ca.gov/FileHandler.ashx?DocumentID=239985&inline
+  publication_updated: 2026-07-17
+  verified: 2026-09-30
+  effective: {from: 2026-01-01, to: 2026-12-31}
+
+groundfish_url: &gf https://wildlife.ca.gov/Fishing/Ocean/Regulations/Groundfish-Summary
+
+rules:
+
+- id: ocean_general
+  species: [any]
+  where: {water: salt}
+  bag: {daily: 10, note: "General limit: 20 finfish in combination, no more than 10 of any one species."}
+  source: {ccr: "T14 CCR §27.60(a)"}
+
+# --------------------------------------------------------------- groundfish
+- id: groundfish_nearshore_season
+  species: [group:nearshore_rockfish, group:cabezon_greenling]
+  where: {water: salt}
+  season:
+    - {from: 01-01, to: 03-31, status: closed, modes: [boat], note: "Boat-based take closed Jan 1 – Mar 31 in all areas."}
+  notes:
+    - "Shore-based anglers and divers are exempt from groundfish season and depth restrictions (§27.20(b)(1)(C)–(D))."
+    - "Boat anglers must carry a descending device (§27.20(b)(2))."
+  source: {ccr: "T14 CCR §§27.20, 27.25–27.45, 28.28, 28.29, 28.55", url: *gf}
+
+- id: groundfish_nearshore_southern
+  species: [group:nearshore_rockfish, group:cabezon_greenling]
+  where: {water: salt, ocean_area: [southern]}
+  season:
+    - {from: 10-01, to: 12-31, status: closed, modes: [boat], note: "Southern area: nearshore rockfish, cabezon and greenlings closed to boats Oct 1 – Dec 31."}
+  notes:
+    - "Southern area Jul 1 – Sep 30: boats may fish only shoreward of the 50-fathom line."
+  source: {ccr: "T14 CCR §27.45", url: *gf}
+
+- id: groundfish_shelf_season
+  species: [group:shelf_rockfish, lingcod]
+  where: {water: salt}
+  season:
+    - {from: 01-01, to: 03-31, status: closed, modes: [boat], note: "Boat-based take closed Jan 1 – Mar 31 in all areas."}
+  notes:
+    - "Shore-based anglers and divers are exempt from groundfish season and depth restrictions (§27.20(b)(1)(C)–(D))."
+  source: {ccr: "T14 CCR §§27.20, 27.25–27.45, 28.27, 28.55", url: *gf}
+
+- id: groundfish_shelf_southern_depth
+  species: [group:shelf_rockfish, lingcod]
+  where: {water: salt, ocean_area: [southern]}
+  periods:
+    - {from: 07-01, to: 09-30, note: "Southern area Jul 1 – Sep 30: boats may fish only shoreward of the 50-fathom (300 ft) line."}
+    - {from: 10-01, to: 12-31, note: "Southern area Oct 1 – Dec 31: boats may fish only seaward of the 50-fathom (300 ft) line."}
+  source: {ccr: "T14 CCR §27.45", url: *gf}
+
+- id: rockfish
+  species: [group:rockfish]
+  where: {water: salt}
+  size: {}
+  bag: {daily: 10, note: "10 fish in the Rockfish, Cabezon and Greenling (RCG) complex combined."}
+  source: {ccr: "T14 CCR §28.55"}
+
+- id: rockfish_prohibited
+  species: [yelloweye_rockfish, cowcod, bronzespotted_rockfish, quillback_rockfish]
+  where: {water: salt}
+  prohibited: true
+  notes: ["Bronzespotted rockfish, cowcod, quillback rockfish and yelloweye rockfish may not be retained at any time."]
+  source: {ccr: "T14 CCR §28.55(b)(1)"}
+
+- id: vermilion_sunset_northern
+  species: [group:vermilion_sunset]
+  where: {water: salt, ocean_area: [northern]}
+  bag: {daily: 4, note: "Vermilion/sunset rockfish: 4 within the RCG limit (Northern area)."}
+  source: {ccr: "T14 CCR §28.55(b)(2)(A)"}
+
+- id: vermilion_sunset_other
+  species: [group:vermilion_sunset]
+  where: {water: salt, ocean_area: [mendocino, san_francisco, central, southern]}
+  bag: {daily: 2, note: "Vermilion/sunset rockfish: 2 within the RCG limit (all areas south of 40°10′ N)."}
+  source: {ccr: "T14 CCR §28.55(b)(2)(B)"}
+
+- id: copper_rockfish
+  species: [copper_rockfish]
+  where: {water: salt}
+  bag: {daily: 1, note: "Copper rockfish: 1 within the RCG limit."}
+  source: {ccr: "T14 CCR §28.55(b)(3)"}
+
+- id: canary_rockfish
+  species: [canary_rockfish]
+  where: {water: salt}
+  bag: {daily: 2, note: "Canary rockfish: 2 within the RCG limit."}
+  source: {ccr: "T14 CCR §28.55(b)(4)"}
+
+- id: lingcod
+  species: [lingcod]
+  where: {water: salt}
+  size: {min: 22, type: TL}
+  bag: {daily: 2}
+  source: {ccr: "T14 CCR §28.27"}
+
+- id: cabezon_greenling
+  species: [group:cabezon_greenling]
+  where: {water: salt}
+  size: {}
+  bag: {daily: 10, note: "Within the 10-fish RCG complex limit."}
+  source: {ccr: "T14 CCR §§28.28, 28.29"}
+
+- id: california_scorpionfish
+  species: [california_scorpionfish]
+  where: {water: salt}
+  size: {}
+  bag: {daily: 5}
+  notes: ["Venomous spines — handle with care."]
+  source: {ccr: "T14 CCR §28.54"}
+
+- id: other_groundfish
+  species: [group:other_groundfish, group:other_flatfish]
+  where: {water: salt}
+  notes: ["Federal groundfish: general 20/10 bag limit; closed in Groundfish Exclusion Areas (§27.50)."]
+  source: {ccr: "T14 CCR §§28.48, 28.49"}
+
+- id: soupfin_shark
+  species: [soupfin_shark]
+  where: {water: salt}
+  bag: {daily: 1}
+  source: {ccr: "T14 CCR §28.49(b)(1)"}
+
+- id: pacific_sanddab
+  species: [pacific_sanddab, petrale_sole, starry_flounder]
+  where: {water: salt}
+  bag: {note: "No bag limit."}
+  source: {ccr: "T14 CCR §§28.47, 28.48"}
+
+- id: leopard_shark
+  species: [leopard_shark]
+  where: {water: salt}
+  size: {min: 36, type: TL}
+  bag: {daily: 3}
+  source: {ccr: "T14 CCR §28.56"}
+
+# --------------------------------------------------------------- flatfish
+- id: california_halibut_south
+  species: [california_halibut]
+  where: {water: salt, lat_max: 36.306}
+  size: {min: 22, type: TL}
+  bag: {daily: 5, note: "5 south of Point Sur."}
+  source: {ccr: "T14 CCR §28.15"}
+
+- id: california_halibut_north
+  species: [california_halibut]
+  where: {water: salt, lat_min: 36.306}
+  size: {min: 22, type: TL}
+  bag: {daily: 2, note: "2 north of Point Sur."}
+  source: {ccr: "T14 CCR §28.15"}
+
+- id: pacific_halibut
+  species: [pacific_halibut]
+  where: {water: salt}
+  size: {}
+  bag: {daily: 1}
+  season:
+    - {from: 11-16, to: 03-31, status: closed, note: "Open Apr 1 – Nov 15 or until the quota is reached."}
+  notes: ["Quota-managed: the season can close early. Check wildlife.ca.gov/conservation/marine/pacific-halibut."]
+  source: {ccr: "T14 CCR §28.20"}
+
+# --------------------------------------------------------------- coastal & pelagic
+- id: saltwater_bass
+  species: [group:saltwater_bass]
+  where: {water: salt}
+  size: {min: 14, type: TL}
+  bag: {daily: 5, note: "5 kelp, barred sand and spotted sand bass combined; no more than 4 barred sand bass."}
+  source: {ccr: "T14 CCR §28.30"}
+
+- id: white_seabass
+  species: [white_seabass]
+  where: {water: salt}
+  size: {min: 28, type: TL}
+  bag: {daily: 3, note: "3, except only 1 south of Point Conception from Mar 15 to Jun 15."}
+  source: {ccr: "T14 CCR §28.35"}
+
+- id: california_barracuda
+  species: [california_barracuda]
+  where: {water: salt}
+  size: {min: 28, type: TL}
+  bag: {daily: 10}
+  source: {ccr: "T14 CCR §§27.60(a), 28.25"}
+
+- id: california_sheephead
+  species: [california_sheephead]
+  where: {water: salt}
+  size: {min: 12, type: TL}
+  bag: {daily: 2}
+  season:
+    - {from: 01-01, to: last-day-feb, status: closed, modes: [boat], note: "Closed to boat-based anglers Jan 1 – end of Feb; shore anglers and divers may fish year-round."}
+  source: {ccr: "T14 CCR §28.26"}
+
+- id: striped_bass_ocean_north
+  species: [striped_bass]
+  where: {water: salt, lat_min: 34.45}
+  size: {min: 18, type: TL}
+  bag: {daily: 2}
+  source: {ccr: "T14 CCR §27.85"}
+
+- id: striped_bass_ocean_south
+  species: [striped_bass]
+  where: {water: salt, lat_max: 34.45}
+  size: {}
+  bag: {daily: 2}
+  source: {ccr: "T14 CCR §27.85"}
+
+- id: pacific_bonito
+  species: [pacific_bonito]
+  where: {water: salt}
+  size: {}
+  bag: {daily: 10, note: "Minimum 24 in fork length or 5 lb, but 5 of the 10 may be smaller."}
+  source: {ccr: "T14 CCR §28.32"}
+
+- id: yellowtail
+  species: [yellowtail]
+  where: {water: salt}
+  size: {}
+  bag: {daily: 10, note: "10 fish at least 24 in fork length, except 5 may be under 24 in fork length."}
+  source: {ccr: "T14 CCR §28.37"}
+
+- id: albacore_south
+  species: [albacore]
+  where: {water: salt, lat_max: 34.45}
+  bag: {daily: 10, note: "In addition to the 20-fish general limit."}
+  source: {ccr: "T14 CCR §28.38(a)"}
+
+- id: albacore_north
+  species: [albacore]
+  where: {water: salt, lat_min: 34.45}
+  bag: {daily: 25, note: "In addition to the 20-fish general limit."}
+  source: {ccr: "T14 CCR §28.38(a)"}
+
+- id: bluefin_tuna
+  species: [bluefin_tuna]
+  where: {water: salt}
+  bag: {daily: 2, note: "In addition to the 20-fish general limit."}
+  source: {ccr: "T14 CCR §28.38(b)"}
+
+- id: other_tuna
+  species: [yellowfin_tuna, bigeye_tuna]
+  where: {water: salt}
+  bag: {daily: 10}
+  source: {ccr: "T14 CCR §§27.60(a), 28.38(d)"}
+
+- id: skipjack
+  species: [skipjack_tuna, northern_anchovy, pacific_sardine, pacific_chub_mackerel, jack_mackerel, jacksmelt, topsmelt, queenfish, pacific_pompano]
+  where: {water: salt}
+  bag: {note: "No bag limit."}
+  source: {ccr: "T14 CCR §27.60(b)"}
+
+- id: marlin
+  species: [group:marlin]
+  where: {water: salt}
+  bag: {daily: 1}
+  source: {ccr: "T14 CCR §28.50"}
+
+- id: swordfish
+  species: [swordfish]
+  where: {water: salt}
+  bag: {daily: 2}
+  source: {ccr: "T14 CCR §28.40"}
+
+- id: pelagic_sharks
+  species: [shortfin_mako, common_thresher, blue_shark]
+  where: {water: salt}
+  bag: {daily: 2, note: "2 of each species."}
+  source: {ccr: "T14 CCR §28.42"}
+
+- id: cow_sharks
+  species: [sevengill_shark, sixgill_shark]
+  where: {water: salt}
+  bag: {daily: 1, note: "1 of each species."}
+  source: {ccr: "T14 CCR §28.41"}
+
+- id: grunion
+  species: [california_grunion]
+  where: {water: salt}
+  bag: {daily: 30}
+  season:
+    - {from: 04-01, to: 06-30, status: closed, note: "Grunion may not be taken Apr 1 – Jun 30."}
+  source: {ccr: "T14 CCR §28.00"}
+
+# --------------------------------------------------------------- surfperch
+- id: surfperch
+  species: [group:surfperch]
+  where: {water: salt}
+  bag: {daily: 10, note: "10 within the 20-fish general limit."}
+  source: {ccr: "T14 CCR §28.59"}
+
+- id: redtail_surfperch
+  species: [redtail_surfperch]
+  where: {water: salt}
+  size: {min: 10.5, type: TL}
+  source: {ccr: "T14 CCR §28.59"}
+
+- id: surfperch_sf_bay
+  species: [group:surfperch, shiner_perch]
+  where: {water: salt, lat_min: 37.43, lat_max: 38.15, lon_min: -122.48}
+  season:
+    - {from: 04-01, to: 07-31, status: closed, note: "Surfperch (except shiner perch) may not be taken in San Francisco and San Pablo bays Apr 1 – Jul 31."}
+  bag: {daily: 5, note: "5 surfperch combined in SF and San Pablo bays (shiner perch not included)."}
+  source: {ccr: "T14 CCR §28.59"}
+
+- id: shiner_perch
+  species: [shiner_perch]
+  where: {water: salt}
+  bag: {daily: 20, note: "20 in addition to the general limit."}
+  source: {ccr: "T14 CCR §28.59"}
+
+# --------------------------------------------------------------- salmon (2026 season)
+- id: coho_prohibited
+  species: [coho_salmon]
+  where: {}
+  prohibited: true
+  notes: ["Coho (silver) salmon may not be retained anywhere in California."]
+  source: {ccr: "T14 CCR §§27.80(b), 7.00"}
+
+- id: salmon_ocean_north
+  species: [chinook_salmon]
+  where: {water: salt, lat_min: 38.9583}
+  size: {min: 20, type: TL}
+  bag: {daily: 2}
+  season:
+    - {from: 01-01, to: 06-12, status: closed}
+    - {from: 07-20, to: 07-31, status: closed}
+    - {from: 09-01, to: 12-31, status: closed}
+  notes: ["North of Point Arena: open Jun 13 – Jul 19 and Aug 1 – 31, 2026. In-season changes are possible: call (800) 662-9825."]
+  source: {ccr: "T14 CCR §27.80(c)(1)–(2), (d)(1)–(2)"}
+
+- id: salmon_ocean_arena_to_38
+  species: [chinook_salmon]
+  where: {water: salt, lat_min: 38.0333, lat_max: 38.9583}
+  size: {min: 20, type: TL}
+  bag: {daily: 2}
+  season:
+    - {from: 01-01, to: 06-26, status: closed}
+    - {from: 07-23, to: 07-31, status: closed}
+    - {from: 09-01, to: 12-31, status: closed}
+  notes: ["Point Arena to 38°02′ N: open Jun 27 – Jul 22 and Aug 1 – 31, 2026. In-season changes are possible: call (800) 662-9825."]
+  source: {ccr: "T14 CCR §27.80(c)(3), (d)(2)"}
+
+- id: salmon_ocean_38_to_pigeon
+  species: [chinook_salmon]
+  where: {water: salt, lat_min: 37.1833, lat_max: 38.0333}
+  size: {min: 20, type: TL}
+  bag: {daily: 2}
+  season:
+    - {from: 01-01, to: 06-26, status: closed}
+    - {from: 07-23, to: 07-31, status: closed}
+    - {from: 11-01, to: 12-31, status: closed}
+  notes: ["38°02′ N to Pigeon Point: open Jun 27 – Jul 22 and Aug 1 – Oct 31, 2026. In-season changes are possible: call (800) 662-9825."]
+  source: {ccr: "T14 CCR §27.80(c)(3), (d)(3)"}
+
+- id: salmon_ocean_south
+  species: [chinook_salmon]
+  where: {water: salt, lat_max: 37.1833}
+  size: {min: 20, type: TL}
+  bag: {daily: 2}
+  season:
+    - {from: 01-01, to: 05-15, status: closed}
+    - {from: 10-01, to: 12-31, status: closed}
+  notes: ["South of Pigeon Point: open May 16 – Sep 30, 2026. In-season changes are possible: call (800) 662-9825."]
+  source: {ccr: "T14 CCR §27.80(c)(4), (d)(4)"}
+
+- id: steelhead_ocean
+  species: [steelhead]
+  where: {water: salt}
+  check: "Steelhead in the ocean: retention rules depend on hatchery marking — check §27.00 and the steelhead rules before keeping."
+  source: {ccr: "T14 CCR §§1.04, 5.88"}
+
+# --------------------------------------------------------------- prohibited
+- id: ocean_prohibited
+  species: [garibaldi, giant_sea_bass, white_shark, green_sturgeon]
+  where: {}
+  prohibited: true
+  notes: ["Release immediately. White shark and green sturgeon may not be removed from the water."]
+  source: {ccr: "T14 CCR §§28.05, 28.10, 28.06, 27.91, 5.81"}
+
+- id: white_sturgeon_ocean
+  species: [white_sturgeon]
+  where: {water: salt}
+  prohibited: true
+  notes: ["White sturgeon are catch-and-release only. Sturgeon over 60 in fork length may not be removed from the water. A Sturgeon Fishing Report Card is required."]
+  source: {ccr: "T14 CCR §27.90"}

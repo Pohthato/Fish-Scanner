@@ -1,0 +1,54 @@
+# Named waters for the water-body search and for special regulations.
+# kind: lake | stream | delta. radius_km: how close a GPS fix must be to count
+# as "on" this water. district overrides the county-based district when the
+# regulations single the water out (e.g. lakes excluded from the Sierra District).
+
+waters:
+- {id: crowley_lake, name: Crowley Lake, county: Mono, kind: lake, lat: 37.585, lon: -118.745, radius_km: 4}
+- {id: hot_creek, name: Hot Creek (hatchery to Owens River), county: Mono, kind: stream, lat: 37.662, lon: -118.826, radius_km: 1.5}
+- {id: upper_owens_river, name: Upper Owens River, county: Mono, kind: stream, lat: 37.680, lon: -118.840, radius_km: 3}
+- {id: lower_owens_river, name: Lower Owens River (Bishop area), county: Inyo, kind: stream, lat: 37.362, lon: -118.390, radius_km: 3}
+- {id: eagle_lake, name: Eagle Lake, county: Lassen, kind: lake, lat: 40.630, lon: -120.750, radius_km: 9}
+- {id: lake_tahoe, name: Lake Tahoe (California side), county: Placer, kind: lake, lat: 39.090, lon: -120.050, radius_km: 12}
+- {id: lake_almanor, name: Lake Almanor, county: Plumas, kind: lake, lat: 40.230, lon: -121.170, radius_km: 7}
+- {id: bucks_lake, name: Bucks Lake, county: Plumas, kind: lake, lat: 39.900, lon: -121.200, radius_km: 3}
+- {id: stampede_reservoir, name: Stampede Reservoir, county: Sierra, kind: lake, lat: 39.470, lon: -120.100, radius_km: 3}
+- {id: shasta_lake, name: Shasta Lake, county: Shasta, kind: lake, lat: 40.750, lon: -122.330, radius_km: 14}
+- {id: trinity_lake, name: Trinity Lake, county: Trinity, kind: lake, lat: 40.850, lon: -122.750, radius_km: 9}
+- {id: lake_oroville, name: Lake Oroville, county: Butte, kind: lake, lat: 39.580, lon: -121.450, radius_km: 9}
+- {id: new_bullards_bar, name: New Bullards Bar Reservoir, county: Yuba, kind: lake, lat: 39.400, lon: -121.140, radius_km: 5}
+- {id: folsom_lake, name: Folsom Lake, county: Placer, kind: lake, lat: 38.720, lon: -121.130, radius_km: 6, district: valley}
+- {id: lake_berryessa, name: Lake Berryessa, county: Napa, kind: lake, lat: 38.600, lon: -122.230, radius_km: 9}
+- {id: clear_lake, name: Clear Lake, county: Lake, kind: lake, lat: 39.050, lon: -122.800, radius_km: 12}
+- {id: lake_mendocino, name: Lake Mendocino, county: Mendocino, kind: lake, lat: 39.200, lon: -123.170, radius_km: 3}
+- {id: pardee_lake, name: Pardee Lake, county: Amador, kind: lake, lat: 38.270, lon: -120.850, radius_km: 4, district: valley}
+- {id: new_melones, name: New Melones Lake, county: Calaveras, kind: lake, lat: 37.970, lon: -120.520, radius_km: 9, district: valley}
+- {id: don_pedro, name: Don Pedro Reservoir, county: Tuolumne, kind: lake, lat: 37.700, lon: -120.400, radius_km: 8, district: valley}
+- {id: lake_mcclure, name: Lake McClure, county: Mariposa, kind: lake, lat: 37.600, lon: -120.270, radius_km: 6, district: valley}
+- {id: sacramento_delta, name: Sacramento–San Joaquin Delta, county: Sacramento, kind: delta, lat: 38.080, lon: -121.600, radius_km: 25}
+- {id: lower_sacramento_river, name: Sacramento River (Sacramento area), county: Sacramento, kind: stream, lat: 38.580, lon: -121.510, radius_km: 4}
+- {id: lower_american_river, name: American River (below Nimbus Dam), county: Sacramento, kind: stream, lat: 38.590, lon: -121.350, radius_km: 6}
+- {id: san_pablo_reservoir, name: San Pablo Reservoir, county: Contra Costa, kind: lake, lat: 37.930, lon: -122.250, radius_km: 2}
+- {id: lake_chabot, name: Lake Chabot, county: Alameda, kind: lake, lat: 37.730, lon: -122.110, radius_km: 2}
+- {id: lake_del_valle, name: Del Valle Reservoir, county: Alameda, kind: lake, lat: 37.590, lon: -121.700, radius_km: 3}
+- {id: shaver_lake, name: Shaver Lake, county: Fresno, kind: lake, lat: 37.110, lon: -119.300, radius_km: 3}
+- {id: lake_isabella, name: Lake Isabella, county: Kern, kind: lake, lat: 35.650, lon: -118.470, radius_km: 7}
+- {id: lake_nacimiento, name: Lake Nacimiento, county: San Luis Obispo, kind: lake, lat: 35.730, lon: -120.950, radius_km: 7}
+- {id: lake_cachuma, name: Lake Cachuma, county: Santa Barbara, kind: lake, lat: 34.580, lon: -119.950, radius_km: 5}
+- {id: lake_casitas, name: Lake Casitas, county: Ventura, kind: lake, lat: 34.390, lon: -119.330, radius_km: 4}
+- {id: castaic_lake, name: Castaic Lake, county: Los Angeles, kind: lake, lat: 34.530, lon: -118.610, radius_km: 4}
+- {id: pyramid_lake, name: Pyramid Lake (Los Angeles Co.), county: Los Angeles, kind: lake, lat: 34.650, lon: -118.770, radius_km: 3}
+- {id: silverwood_lake, name: Silverwood Lake, county: San Bernardino, kind: lake, lat: 34.290, lon: -117.330, radius_km: 3}
+- {id: big_bear_lake, name: Big Bear Lake, county: San Bernardino, kind: lake, lat: 34.240, lon: -116.950, radius_km: 5}
+- {id: lake_perris, name: Lake Perris, county: Riverside, kind: lake, lat: 33.860, lon: -117.170, radius_km: 3}
+- {id: diamond_valley_lake, name: Diamond Valley Lake, county: Riverside, kind: lake, lat: 33.680, lon: -117.050, radius_km: 4}
+- {id: lake_skinner, name: Lake Skinner, county: Riverside, kind: lake, lat: 33.590, lon: -117.030, radius_km: 2}
+- {id: lake_hodges, name: Lake Hodges, county: San Diego, kind: lake, lat: 33.060, lon: -117.130, radius_km: 3}
+- {id: el_capitan, name: El Capitan Reservoir, county: San Diego, kind: lake, lat: 32.900, lon: -116.820, radius_km: 3}
+- {id: san_vicente, name: San Vicente Reservoir, county: San Diego, kind: lake, lat: 32.920, lon: -116.920, radius_km: 3}
+- {id: lake_cuyamaca, name: Lake Cuyamaca, county: San Diego, kind: lake, lat: 32.980, lon: -116.580, radius_km: 2}
+- {id: barrett_lake, name: Barrett Lake, county: San Diego, kind: lake, lat: 32.680, lon: -116.670, radius_km: 2.5}
+- {id: upper_otay_lake, name: Upper Otay Lake, county: San Diego, kind: lake, lat: 32.660, lon: -116.940, radius_km: 1.5}
+- {id: salton_sea, name: Salton Sea, county: Imperial, kind: lake, lat: 33.300, lon: -115.840, radius_km: 25, district: colorado_river}
+- {id: colorado_river_parker, name: Colorado River (Parker strip), county: San Bernardino, kind: stream, lat: 34.150, lon: -114.290, radius_km: 8, district: colorado_river}
+- {id: lake_havasu, name: Lake Havasu (California side), county: San Bernardino, kind: lake, lat: 34.450, lon: -114.370, radius_km: 10, district: colorado_river}

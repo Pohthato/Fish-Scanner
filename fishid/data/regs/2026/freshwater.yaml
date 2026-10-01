@@ -1,0 +1,298 @@
+# Inland (freshwater) sport fishing rules, 2026. Same rule format as ocean.yaml.
+# Covers statewide species rules (T14 CCR §§5.00–5.95), district rules that
+# change limits, and a selection of §7.50 special-regulation waters. Waters not
+# listed here may still have special regulations — the app says so.
+
+meta:
+  title: 2026 California Freshwater Sport Fishing Regulations
+  url: https://nrm.dfg.ca.gov/FileHandler.ashx?DocumentID=209090&inline
+  publication_updated: 2026-07-10
+  verified: 2026-09-30
+  effective: {from: 2026-01-01, to: 2026-12-31}
+
+rules:
+
+- id: fresh_general
+  species: [any]
+  where: {water: fresh}
+  notes: ["Many waters have special regulations (§§7.40, 7.50). Check the booklet for the water you fished."]
+  source: {ccr: "T14 CCR §5.95"}
+
+# --------------------------------------------------------------- black bass
+- id: black_bass_lakes
+  species: [group:black_bass]
+  where: {water: fresh, water_kind: [lake, delta]}
+  size: {min: 12, type: TL}
+  bag: {daily: 5}
+  source: {ccr: "T14 CCR §5.00(a)(1)"}
+
+- id: black_bass_streams
+  species: [group:black_bass]
+  where: {water: fresh, water_kind: [stream]}
+  size: {}
+  bag: {daily: 5}
+  source: {ccr: "T14 CCR §5.00(a)(2)"}
+
+- id: black_bass_colorado_river
+  species: [group:black_bass]
+  where: {water: fresh, district: [colorado_river]}
+  size: {min: 13, type: TL}
+  bag: {daily: 6, note: "Conforms with Arizona regulations."}
+  source: {ccr: "T14 CCR §5.00(b)(1)"}
+
+- id: black_bass_plumas
+  species: [group:black_bass]
+  where: {water: fresh, county: [Plumas]}
+  size: {}
+  bag: {daily: 5}
+  source: {ccr: "T14 CCR §5.00(b)(4)"}
+
+- id: black_bass_catch_release_lakes
+  species: [group:black_bass]
+  where: {water: fresh, water_body: [barrett_lake, upper_otay_lake]}
+  prohibited: true
+  notes: ["Catch and release only."]
+  source: {ccr: "T14 CCR §5.00(b)(5), (14)"}
+
+- id: black_bass_casitas
+  species: [group:black_bass]
+  where: {water: fresh, water_body: [lake_casitas]}
+  size: {min: 12, type: TL}
+  bag: {daily: 5, note: "No more than one over 22 inches."}
+  source: {ccr: "T14 CCR §5.00(b)(6)"}
+
+- id: black_bass_cuyamaca_smallmouth
+  species: [smallmouth_bass]
+  where: {water: fresh, water_body: [lake_cuyamaca]}
+  prohibited: true
+  notes: ["Smallmouth bass are catch and release only at Cuyamaca Lake."]
+  source: {ccr: "T14 CCR §5.00(b)(8)"}
+
+- id: black_bass_cuyamaca_largemouth
+  species: [largemouth_bass]
+  where: {water: fresh, water_body: [lake_cuyamaca]}
+  size: {}
+  bag: {daily: 5}
+  source: {ccr: "T14 CCR §5.00(b)(8)"}
+
+- id: black_bass_hodges
+  species: [group:black_bass]
+  where: {water: fresh, water_body: [lake_hodges]}
+  size: {min: 15, type: TL}
+  bag: {daily: 5}
+  source: {ccr: "T14 CCR §5.00(b)(10)"}
+
+- id: black_bass_shaver
+  species: [group:black_bass]
+  where: {water: fresh, water_body: [shaver_lake]}
+  size: {}
+  bag: {daily: 5}
+  source: {ccr: "T14 CCR §5.00(b)(13)"}
+
+# --------------------------------------------------------------- panfish
+- id: sunfish_crappie
+  species: [group:sunfish_crappie]
+  where: {water: fresh}
+  size: {}
+  bag: {daily: 25, note: "25 sunfish and crappie combined."}
+  source: {ccr: "T14 CCR §5.82"}
+
+- id: crappie_hodges_el_capitan
+  species: [black_crappie, white_crappie]
+  where: {water: fresh, water_body: [lake_hodges, el_capitan]}
+  size: {min: 10, type: TL}
+  source: {ccr: "T14 CCR §5.82(c)"}
+
+- id: san_diego_zero_bag_lakes
+  species: [group:sunfish_crappie, group:catfish, group:bullhead]
+  where: {water: fresh, water_body: [barrett_lake, upper_otay_lake]}
+  prohibited: true
+  notes: ["Zero bag limit at Barrett and Upper Otay lakes."]
+  source: {ccr: "T14 CCR §§5.15(b)(9), 5.82(b)(1)"}
+
+# --------------------------------------------------------------- catfish
+- id: catfish_statewide
+  species: [group:catfish, group:bullhead]
+  where: {water: fresh}
+  bag: {note: "No limit on catfish or bullheads, except where listed."}
+  source: {ccr: "T14 CCR §5.15"}
+
+- id: catfish_10_districts
+  species: [group:catfish]
+  where: {water: fresh, district: [colorado_river, southern_fw]}
+  bag: {daily: 10}
+  source: {ccr: "T14 CCR §5.15(b)(1)–(2)"}
+
+- id: catfish_10_counties
+  species: [group:catfish]
+  where: {water: fresh, county: [Inyo, Mono]}
+  bag: {daily: 10}
+  source: {ccr: "T14 CCR §5.15(b)(5), (7)"}
+
+- id: catfish_5_counties
+  species: [group:catfish]
+  where: {water: fresh, county: [San Diego, Santa Clara]}
+  bag: {daily: 5}
+  source: {ccr: "T14 CCR §5.15(b)(9), (11)"}
+
+# --------------------------------------------------------------- striped bass, sturgeon, shad
+- id: striped_bass_inland
+  species: [striped_bass]
+  where: {water: fresh}
+  size: {min: 18, type: TL}
+  bag: {daily: 2}
+  source: {ccr: "T14 CCR §5.75"}
+
+- id: striped_bass_inland_south
+  species: [striped_bass]
+  where: {water: fresh, district: [colorado_river, southern_fw]}
+  size: {}
+  bag: {daily: 10}
+  source: {ccr: "T14 CCR §5.75(d)"}
+
+- id: white_bass
+  species: [white_bass]
+  where: {water: fresh}
+  size: {}
+  bag: {note: "No limit. White bass may not be kept alive — kill immediately."}
+  source: {ccr: "T14 CCR §5.90"}
+
+- id: white_sturgeon_inland
+  species: [white_sturgeon]
+  where: {water: fresh}
+  prohibited: true
+  notes: ["Catch and release only (zero bag). Sturgeon over 60 in fork length may not be removed from the water. Sturgeon Fishing Report Card required."]
+  source: {ccr: "T14 CCR §5.80"}
+
+- id: american_shad
+  species: [american_shad]
+  where: {water: fresh}
+  bag: {daily: 25}
+  source: {ccr: "T14 CCR §5.65"}
+
+- id: splittail
+  species: [sacramento_splittail]
+  where: {water: fresh}
+  bag: {daily: 2}
+  source: {ccr: "T14 CCR §5.70"}
+
+# --------------------------------------------------------------- trout and salmon
+- id: trout_lakes
+  species: [group:trout]
+  where: {water: fresh, water_kind: [lake]}
+  bag: {daily: 5, note: "5 trout per day, 10 in possession."}
+  source: {ccr: "T14 CCR §5.85(a)(1)"}
+
+- id: trout_streams
+  species: [group:trout]
+  where: {water: fresh, water_kind: [stream, delta]}
+  bag: {daily: 5, note: "5 trout per day, 10 in possession, in season."}
+  season:
+    - {from: 11-16, to: fri-before-last-sat-apr, status: closed, note: "Streams: zero trout bag Nov 16 – the Friday before the last Saturday in April; artificial barbless lures only."}
+  source: {ccr: "T14 CCR §5.85(a)(2)"}
+
+- id: brook_trout
+  species: [brook_trout]
+  where: {water: fresh}
+  size: {max: 9.99, type: TL}
+  bag: {daily: 10, note: "10 brook trout under 10 in, in addition to the trout limit (not in §7.50 waters)."}
+  source: {ccr: "T14 CCR §5.84"}
+
+- id: steelhead_inland
+  species: [steelhead]
+  where: {water: fresh}
+  check: "Only hatchery steelhead (adipose fin clipped) may be kept, and only in waters open to them. Steelhead Report Card required."
+  source: {ccr: "T14 CCR §§5.88, 7.00, 7.40"}
+
+- id: chinook_inland
+  species: [chinook_salmon]
+  where: {water: fresh}
+  check: "Inland salmon seasons are set water-by-water (§7.40) and many rivers are closed — check before keeping."
+  source: {ccr: "T14 CCR §§5.89, 7.40"}
+
+- id: landlocked_salmon
+  species: [group:landlocked_salmon]
+  where: {water: fresh}
+  size: {}
+  bag: {daily: 5}
+  source: {ccr: "T14 CCR §5.41"}
+
+- id: landlocked_salmon_10
+  species: [group:landlocked_salmon]
+  where: {water: fresh, water_body: [bucks_lake, new_bullards_bar, pardee_lake, trinity_lake]}
+  bag: {daily: 10}
+  source: {ccr: "T14 CCR §5.41(e)"}
+
+- id: mountain_whitefish
+  species: [mountain_whitefish]
+  where: {water: fresh}
+  bag: {daily: 5, note: "Only where and when trout may be taken."}
+  source: {ccr: "T14 CCR §5.50"}
+
+- id: crowley_lake
+  species: [group:trout]
+  where: {water: fresh, water_body: [crowley_lake]}
+  season:
+    - {from: 11-16, to: fri-before-last-sat-apr, status: closed, note: "Crowley Lake is open the last Saturday in April through Nov 15."}
+  periods:
+    - {from: last-sat-apr, to: 07-31, bag: {daily: 5}}
+    - {from: 08-01, to: 11-15, size: {min: 18, type: TL}, bag: {daily: 2}, note: "Aug 1 – Nov 15: artificial lures only, 18 in minimum, 2 trout."}
+  notes: ["Closed to all fishing within 1,800 ft of the outlet dam."]
+  source: {ccr: "T14 CCR §7.50(b)(38)"}
+
+- id: eagle_lake
+  species: [group:trout]
+  where: {water: fresh, water_body: [eagle_lake]}
+  season:
+    - {from: 03-01, to: fri-before-sat-before-memorial-day, status: closed, note: "Eagle Lake is open the Saturday before Memorial Day through the last day of February."}
+  bag: {daily: 2, note: "2 trout per day, 4 in possession."}
+  source: {ccr: "T14 CCR §7.50(b)(44)"}
+
+- id: hot_creek
+  species: [group:trout]
+  where: {water: fresh, water_body: [hot_creek]}
+  prohibited: true
+  notes: ["Zero trout limit; artificial flies with barbless hooks only."]
+  source: {ccr: "T14 CCR §7.50(b)(61)"}
+
+# --------------------------------------------------------------- Salton Sea
+- id: corvina_salton_sea
+  species: [orangemouth_corvina]
+  where: {water: fresh}
+  size: {min: 18, type: TL}
+  bag: {daily: 2, note: "Possession limit 4."}
+  source: {ccr: "T14 CCR §5.25"}
+
+- id: croaker_sargo_salton_sea
+  species: [gulf_croaker, sargo]
+  where: {water: fresh}
+  size: {}
+  bag: {daily: 6, note: "6 of each species; possession 12."}
+  source: {ccr: "T14 CCR §5.26"}
+
+# --------------------------------------------------------------- invasive / protected
+- id: grass_carp
+  species: [grass_carp]
+  where: {water: fresh}
+  prohibited: true
+  notes: ["Return grass carp to the water unharmed — except in the Sacramento River drainage above and including Lake Shasta, where they must be killed and reported (530-225-2278)."]
+  source: {ccr: "T14 CCR §5.37"}
+
+- id: northern_pike
+  species: [northern_pike]
+  where: {water: fresh}
+  bag: {note: "Must be killed immediately (remove the head), kept, and reported to CalTIP 1-888-DFW-CALTIP within 24 hours."}
+  source: {ccr: "T14 CCR §5.51"}
+
+- id: fully_protected_fishes
+  species: [group:fully_protected_fw]
+  where: {}
+  prohibited: true
+  notes: ["Fully protected species — may not be taken or possessed."]
+  source: {ccr: "T14 CCR §5.93"}
+
+- id: no_limit_fresh
+  species: [tilapia, yellow_perch, common_carp]
+  where: {water: fresh}
+  bag: {note: "No limit."}
+  source: {ccr: "T14 CCR §§5.83, 5.91, 5.95"}

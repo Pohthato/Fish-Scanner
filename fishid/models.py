@@ -19,12 +19,16 @@ class Verdict(str, Enum):
     SEASON_CLOSED = "SEASON_CLOSED"
     MPA_NO_TAKE = "MPA_NO_TAKE"
     UNCERTAIN_SPECIES = "UNCERTAIN_SPECIES"
+    # The photo can't settle it (hatchery fin clip, water-specific salmon
+    # seasons, take-restricted MPA, outside California): never a KEEP.
+    CHECK_REGS = "CHECK_REGS"
 
 
 # Higher = stricter. Used when several candidate species must be combined.
 STRICTNESS = {
     Verdict.KEEP: 0,
     Verdict.TOO_CLOSE_TO_CALL: 1,
+    Verdict.CHECK_REGS: 2,
     Verdict.UNCERTAIN_SPECIES: 2,
     Verdict.RELEASE_UNDERSIZED: 3,
     Verdict.RELEASE_OVERSIZED: 3,
@@ -86,10 +90,18 @@ class Length:
 @dataclass
 class Place:
     in_california: bool = True
+    lat: float | None = None
+    lon: float | None = None
+    county: str | None = None
     ocean_area: str | None = None
     district: str | None = None
     water_body: str | None = None
+    water_kind: Literal["lake", "stream", "delta"] | None = None
     mpa: dict | None = None
     label: str = "Statewide (no location)"
     water: Literal["salt", "fresh", "unknown"] = "unknown"
     warnings: list[str] = field(default_factory=list)
+
+    @property
+    def known(self) -> bool:
+        return self.lat is not None or self.water_body is not None
