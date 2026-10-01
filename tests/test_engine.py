@@ -126,3 +126,25 @@ def test_citations_and_staleness():
     assert not d.stale
     stale = evaluate([("lingcod", 0.95)], length(24.0), ocean("central"), JUNE, mode="boat", today=date(2027, 1, 2))
     assert stale.stale and "2027" in stale.stale_message
+
+
+def test_saltwater_species_at_freshwater_location_is_flagged():
+    d = run("lingcod", length(24.0), fresh(kind="lake"), mode=None)
+    assert d.verdict == Verdict.CHECK_REGS
+    assert "saltwater" in d.reasons[0]
+
+
+def test_depth_estimated_length_never_clears_a_size_limit():
+    rough = length(30.0)
+    rough.rough = True
+    d = run("lingcod", rough, ocean("central"))
+    assert d.verdict == Verdict.TOO_CLOSE_TO_CALL
+    assert "reference object" in d.reasons[0]
+    # ...but it can still say undersized, which errs toward release.
+    small = length(12.0)
+    small.rough = True
+    assert run("lingcod", small, ocean("central")).verdict == Verdict.RELEASE_UNDERSIZED
+    # and species with no size limit are unaffected
+    blue = length(10.0)
+    blue.rough = True
+    assert run("blue_rockfish", blue, ocean("central")).verdict == Verdict.KEEP

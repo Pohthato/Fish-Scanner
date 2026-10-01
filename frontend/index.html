@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<!--
+	California Fish ID
+	Layout based on "Dimension" by HTML5 UP (html5up.net) — CC BY 3.0, see LICENSE-dimension.txt
+-->
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="theme-color" content="#0B1F2A" />
+	<title>California Fish ID</title>
+	<meta name="description" content="Identify a California catch, measure it from a photo, and check the CDFW regulations." />
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+	<link rel="stylesheet" href="assets/css/main.css" />
+	<link rel="icon" href="assets/img/logo.svg" type="image/svg+xml" />
+</head>
+<body class="is-preload">
+
+	<!-- Background slideshow -->
+	<div id="bg" aria-hidden="true">
+		<div class="slide" data-src="assets/img/bg-owens-river.webp"></div>
+		<div class="slide" data-src="assets/img/bg-huntington-boat.webp"></div>
+		<div class="slide" data-src="assets/img/bg-pacifica-pier.webp"></div>
+		<div class="slide" data-src="assets/img/bg-huntington-pier.webp"></div>
+		<div class="slide" data-src="assets/img/bg-pismo-surf.webp"></div>
+		<div class="scrim"></div>
+		<div class="shimmer"></div>
+	</div>
+
+	<div id="wrapper">
+
+		<!-- Header -->
+		<header id="header">
+			<div class="logo">
+				<svg viewBox="0 0 64 64" class="logo-mark" aria-hidden="true">
+					<path class="draw" d="M38 6 v26 a10 10 0 0 1 -20 0 v-4" />
+					<path class="draw" d="M18 28 l-4 4" />
+					<path class="draw fish" d="M14 46 c8 -9 22 -9 32 0 c-10 9 -24 9 -32 0 z M46 46 l8 -6 v12 z" />
+					<circle class="draw eye" cx="21" cy="45" r="1.6" />
+				</svg>
+			</div>
+			<div class="content">
+				<div class="inner">
+					<h1 class="title" aria-label="California Fish ID">California Fish ID</h1>
+					<p class="tagline">Identify · Measure · Know the regs</p>
+					<ul class="chips">
+						<li class="chip" id="chip-date">Today</li>
+						<li class="chip" id="chip-verified">Regulations loading…</li>
+						<li class="chip" id="chip-species">California species</li>
+						<li class="chip">Fresh &amp; salt water</li>
+					</ul>
+					<ul class="stats">
+						<li><span class="num" data-count="0" id="stat-species">0</span><span class="lbl">species</span></li>
+						<li><span class="num" data-count="0" id="stat-rules">0</span><span class="lbl">rules loaded</span></li>
+						<li><span class="num" data-count="0" id="stat-waters">0</span><span class="lbl">waters &amp; MPAs mapped</span></li>
+					</ul>
+				</div>
+			</div>
+			<nav>
+				<ul>
+					<li><a href="#scan" class="magnetic">Scan</a></li>
+					<li><a href="#how" class="magnetic">How it works</a></li>
+					<li><a href="#gear" class="magnetic">My Gear</a></li>
+					<li><a href="#about" class="magnetic">About</a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<!-- Panels -->
+		<div id="main">
+
+			<!-- Scan -->
+			<article id="scan" aria-labelledby="scan-title">
+				<h2 class="major" id="scan-title">Scan a catch</h2>
+
+				<section class="stage stage-form">
+					<label class="dropzone" id="dropzone" tabindex="0">
+						<input type="file" id="file" accept="image/*" hidden />
+						<svg class="hook-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 4 v20 a8 8 0 0 1 -16 0 v-3 M12 21 l-3 3" /></svg>
+						<span class="dz-title">Drop a photo of your fish</span>
+						<span class="dz-sub">or tap to choose · lay it flat, whole fish in frame · add a dollar bill or card for precise length</span>
+					</label>
+
+					<div class="preview" id="preview" hidden>
+						<div class="preview-img">
+							<img id="preview-img" alt="Your photo" />
+							<svg id="manual-layer" class="manual-layer" preserveAspectRatio="none"></svg>
+						</div>
+						<button type="button" class="link" id="change-photo">Choose a different photo</button>
+					</div>
+
+					<div class="fields" id="fields" hidden>
+						<div class="field">
+							<span class="label">Where</span>
+							<div class="loc-row">
+								<span class="badge" id="exif-badge" hidden>📍 From photo GPS</span>
+								<button type="button" class="small" id="use-location">Use my location</button>
+								<button type="button" class="small" id="toggle-map">Drop a pin</button>
+							</div>
+							<div id="map" class="map" hidden></div>
+							<div class="water-search">
+								<input type="search" id="water-q" placeholder="…or search a lake / river (e.g. Crowley, Castaic)" autocomplete="off" />
+								<ul class="water-results" id="water-results"></ul>
+							</div>
+							<p class="loc-label" id="loc-label">No location yet — statewide rules will be shown.</p>
+						</div>
+
+						<div class="field half">
+							<label class="label" for="date">Date caught</label>
+							<input type="date" id="date" />
+						</div>
+						<div class="field half">
+							<span class="label">Fishing from</span>
+							<div class="seg" id="mode" role="radiogroup">
+								<button type="button" data-mode="boat" role="radio">Boat</button>
+								<button type="button" data-mode="shore" role="radio">Shore</button>
+								<button type="button" data-mode="dive" role="radio">Diving</button>
+							</div>
+						</div>
+
+						<div class="field">
+							<span class="label">Gear in the photo <small>(used as a ruler)</small></span>
+							<div class="gear-chips" id="gear-chips"><span class="muted">No saved gear — add some under My Gear.</span></div>
+						</div>
+
+						<div class="field">
+							<details class="manual">
+								<summary>Measure with two clicks <small>(optional)</small></summary>
+								<p class="muted">Click both ends of something of known length in the photo, then enter its length.</p>
+								<div class="manual-row">
+									<button type="button" class="small" id="manual-start">Pick two points</button>
+									<input type="number" id="manual-len" min="0.5" step="0.01" placeholder="inches" />
+									<button type="button" class="link" id="manual-clear">clear</button>
+								</div>
+							</details>
+						</div>
+
+						<ul class="actions">
+							<li><button type="button" class="primary" id="analyze">Analyze catch</button></li>
+						</ul>
+					</div>
+				</section>
+
+				<section class="stage stage-busy" hidden>
+					<div class="sonar-wrap">
+						<img id="busy-img" alt="" />
+						<div class="sonar"><span></span></div>
+					</div>
+					<ol class="rail" id="rail">
+						<li data-step="detect"><i></i>Detecting fish</li>
+						<li data-step="identify"><i></i>Identifying species</li>
+						<li data-step="measure"><i></i>Measuring</li>
+						<li data-step="regs"><i></i>Checking regulations</li>
+					</ol>
+				</section>
+
+				<section class="stage stage-result" hidden>
+					<div id="banners"></div>
+					<div id="results"></div>
+					<p class="disclaimer" id="disclaimer"></p>
+					<ul class="actions">
+						<li><button type="button" class="primary" id="again">Scan another</button></li>
+					</ul>
+				</section>
+			</article>
+
+			<!-- How it works -->
+			<article id="how" aria-labelledby="how-title">
+				<h2 class="major" id="how-title">How it works</h2>
+				<ol class="steps">
+					<li class="step">
+						<div class="step-icon">📷</div>
+						<h3>Photo</h3>
+						<p>The app finds every fish in the picture and outlines it, along with anything it can use as a ruler.</p>
+					</li>
+					<li class="step">
+						<div class="step-icon">📏</div>
+						<h3>Measure</h3>
+						<p>It traces the fish's midline from snout to tail — curved fish included — and converts pixels to inches using the best scale it can find.</p>
+					</li>
+					<li class="step">
+						<div class="step-icon">📘</div>
+						<h3>Regs</h3>
+						<p>The species, length, place and date are checked against the current CDFW rules, and every answer cites the section it came from.</p>
+					</li>
+				</ol>
+				<h3 class="major">Tips for a precise length</h3>
+				<ul class="tips">
+					<li><strong>Put a dollar bill or a credit card</strong> flat next to the fish, in the same plane. That gets you within about 3%.</li>
+					<li>Shoot from directly above, with the whole fish in frame and its mouth closed.</li>
+					<li>No reference? Save your rod handle or cooler lid under <a href="#gear">My Gear</a>, or use “Measure with two clicks”.</li>
+					<li>Without any reference the app estimates distance from the photo itself — expect ±10–20%, and it will say “too close to call” near a limit.</li>
+				</ul>
+				<h3 class="major">What the verdicts mean</h3>
+				<ul class="legend">
+					<li><span class="v v-keep">Keep</span> Legal species, size, season and place — as far as a photo can tell.</li>
+					<li><span class="v v-close">Too close</span> The measured range overlaps a size limit. Put it on a ruler.</li>
+					<li><span class="v v-check">Check rules</span> Depends on something a photo can't show (hatchery fin clip, local closures, MPA rules).</li>
+					<li><span class="v v-release">Release</span> Undersized, oversized, prohibited, out of season, or inside a no-take reserve.</li>
+				</ul>
+			</article>
+
+			<!-- My Gear -->
+			<article id="gear" aria-labelledby="gear-title">
+				<h2 class="major" id="gear-title">My Gear</h2>
+				<p>Things you often have in photos, with their exact length. When one shows up next to a fish, it's used as a ruler.</p>
+				<form id="gear-form" class="gear-form" autocomplete="off">
+					<input type="text" id="gear-name" placeholder="e.g. rod handle" maxlength="60" required />
+					<input type="number" id="gear-len" placeholder="length (in)" min="0.6" max="119" step="0.01" required />
+					<button type="submit" class="primary small">Add</button>
+				</form>
+				<ul class="gear-list" id="gear-list"></ul>
+			</article>
+
+			<!-- About -->
+			<article id="about" aria-labelledby="about-title">
+				<h2 class="major" id="about-title">About</h2>
+				<p>California Fish ID runs on your own computer. Photos never leave it.</p>
+				<ul class="about-list">
+					<li><strong>Detection:</strong> <span id="about-seg">SAM 3 or YOLOE</span> finds and outlines the fish and any reference object.</li>
+					<li><strong>Species:</strong> <span id="about-cls">BioCLIP 2</span>, limited to fish known from California.</li>
+					<li><strong>Length:</strong> midline of the fish outline, scaled by a dollar bill / card / coin / can, your saved gear, two clicks, or Depth Pro as a last resort.</li>
+					<li><strong>Regulations:</strong> entered by hand from the 2026 CDFW Ocean and Freshwater Sport Fishing Regulations, with section citations. Verified <span id="about-verified">—</span>.</li>
+				</ul>
+				<p class="disclaimer">Not legal advice — verify at <a href="https://wildlife.ca.gov/Regulations" target="_blank" rel="noopener">wildlife.ca.gov</a>. Regulations change in season; the app can be wrong about species or size. You are responsible for the fish you keep.</p>
+			</article>
+		</div>
+
+		<!-- Footer -->
+		<footer id="footer">
+			<p class="copyright">Design: <a href="https://html5up.net" target="_blank" rel="noopener">HTML5 UP</a> · Photos: <a href="https://unsplash.com" target="_blank" rel="noopener">Unsplash</a> (see CREDITS) · Not legal advice</p>
+		</footer>
+	</div>
+
+	<div id="toasts" aria-live="polite"></div>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+	<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

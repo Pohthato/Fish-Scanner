@@ -185,6 +185,7 @@ def measure_length(mask: Mask, scale: Scale, kind: str = "TL") -> Length:
         snout=(float(snout[0]), float(snout[1])),
         tail=(float(tail[0]), float(tail[1])),
         midline=_thin(midline, 60),
+        rough=scale.source == "depth",
     )
 
 

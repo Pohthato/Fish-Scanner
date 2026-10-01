@@ -1,27 +1,22 @@
-node_modules/
-build/
-dist/
-coverage/
-.DS_Store
-*.log
-.env*
-!.env.example
-
 # Python
 __pycache__/
 *.pyc
+*.egg-info/
 .venv/
 .pytest_cache/
-# user data / model weights
-fishid/user/
-*.pt
-*.safetensors
-frontend/out/
-frontend/.next/
-.venv/
-fishid/user/
+
+# model weights and caches (downloaded on first run)
+models/
 *.pt
 *.onnx
+*.safetensors
+
+# per-user data
+fishid/user/
+
+# training data
 training/data/
 training/runs/
-models/
+
+.DS_Store
+*.log

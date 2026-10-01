@@ -80,6 +80,9 @@ class Length:
     snout: Point
     tail: Point
     midline: list[Point]
+    # True when the scale came from depth estimation rather than an object of
+    # known size: good enough to show, not good enough to clear a size limit.
+    rough: bool = False
 
     def display(self) -> str:
         if self.truncated:

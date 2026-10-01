@@ -95,8 +95,14 @@ def scale_from_reference(mask: Mask, ref_id: str) -> Scale | Rejection:
     if ref.shape == "circle":
         if len(contour) < 5:
             return Rejection("reference", f"{ref.label} outline too small")
-        (_, _), axes, _ = cv2.fitEllipse(contour)
-        major = max(axes)
+        ellipse = cv2.fitEllipse(contour)
+        major = max(ellipse[1])
+        # A coin seen at any angle is an ellipse; anything else isn't a coin.
+        drawn = np.zeros(mask.data.shape, np.uint8)
+        cv2.ellipse(drawn, ellipse, 1, -1)
+        fit = np.logical_and(drawn, mask.data).sum() / max(1, np.logical_or(drawn, mask.data).sum())
+        if fit < 0.9:
+            return Rejection("reference", f"{ref.label} outline isn't round (fit {fit:.0%})")
         return Scale(major / ref.long_in, _rel_sigma(major, ref, 0.0), "reference", ref.label, outline)
 
     (_, _), (w, h), _ = cv2.minAreaRect(contour)

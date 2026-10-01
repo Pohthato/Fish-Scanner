@@ -33,3 +33,10 @@ def test_water_filter():
     fresh = {s.id for s in species_for_water("fresh")}
     assert "largemouth_bass" in fresh and "striped_bass" in fresh
     assert "lingcod" not in fresh
+
+
+def test_every_family_has_a_taxonomy_entry():
+    from fishid.species.taxonomy import FAMILY, taxonomic_name
+    for sp in load_catalog().values():
+        assert sp.family in FAMILY, sp.family
+    assert taxonomic_name("Centrarchidae", "Micropterus salmoides").endswith("Centrarchidae Micropterus salmoides")

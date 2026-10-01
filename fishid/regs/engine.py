@@ -135,12 +135,21 @@ def _size_verdict(size: dict | None, length: Length | None, sp: Species) -> tupl
                                            "Measure on a ruler before keeping."] + note
     if length.truncated:
         return Verdict.TOO_CLOSE_TO_CALL, ["The fish runs off the edge of the photo, so its full length is unknown."]
+    if length.rough:
+        return Verdict.TOO_CLOSE_TO_CALL, [f"Estimated {length.display()} without a reference object — too rough to clear "
+                                           f"the {limit_txt} {kind} limit. Measure it on a ruler, or retake the photo with a "
+                                           "dollar bill or card beside the fish."]
     return Verdict.KEEP, [f"Legal size: {length.display()} {length.kind} ({limit_txt} {kind})."] + note
 
 
 def judge_species(sp: Species, length: Length | None, place: Place, on: date, mode: str | None,
                   ruleset: RuleSet) -> Ruling:
     """Strictest outcome for one species over every plausible reading of the place."""
+    if place.water in ("salt", "fresh") and sp.water not in (place.water, "both"):
+        kind = {"salt": "saltwater", "fresh": "freshwater"}
+        return Ruling(sp, Verdict.CHECK_REGS,
+                      [f"{sp.name} is a {kind[sp.water]} fish but the location is {kind[place.water]}. "
+                       "Check the map pin or the species."], [])
     outcomes = []
     for pl in _plausible_places(place, sp):
         for rules in _scenarios(ruleset.rules, sp, pl, on):
