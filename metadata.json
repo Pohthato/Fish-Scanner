@@ -1,6 +1,0 @@
-{
-  "name": "FishingApp - California Fish Identifier & Regulations",
-  "description": "AI-powered California fish identifier, size & keepable verification, CDFW regulations, and dangerous species detection.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
