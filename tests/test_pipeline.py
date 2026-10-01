@@ -100,7 +100,7 @@ def test_depth_fallback_when_no_reference(scene):
     r = analyzer([fish], depth=SlowDepth()).analyze(photo_bytes(), lat=36.62, lon=-121.98,
                                                     on=date(2026, 6, 15), mode="boat")
     assert r["scale"]["source"] == "depth"
-    assert any("depth" in n for n in r["scale_notes"])
+    assert any("rough guess" in n for n in r["scale_notes"])
     # Depth-based lengths are too rough to clear a size limit.
     assert r["fish"][0]["verdict"] == "TOO_CLOSE_TO_CALL"
 

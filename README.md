@@ -44,7 +44,7 @@ python -m fishid regs check                                    # did CDFW change
 |---|---|
 | A dollar bill or credit/ID card lying flat next to the fish | about 2–3% |
 | Saved gear (e.g. your rod handle, set under *My Gear*) or two clicks on a known length | about 3–5% |
-| Nothing: distance estimated from the photo itself | ±10–20%, usually "too close to call" near a limit |
+| Nothing: distance estimated from the photo itself | rough guess only, can be far off; never used to clear a size limit |
 
 Shoot from straight above, with the whole fish in frame and lying flat. If the fish runs off the edge of
 the photo, the app reports "≥ X in" and will never say keep.

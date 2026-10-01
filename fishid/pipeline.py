@@ -344,8 +344,8 @@ class Analyzer:
             try:
                 depth = self.slots["depth"].get()
                 scale = depth.scale_at(photo.rgb, fish[0], photo.focal_px)
-                notes.append("No reference object found — length estimated from depth (±10–20%). Put a dollar bill "
-                             "or card next to the fish for a precise measurement.")
+                notes.append("No reference object found — the length is a rough guess from the photo alone and "
+                             "can be far off. Put a dollar bill or card next to the fish for a real measurement.")
             except Exception as e:
                 notes.append(f"No reference object found and depth estimate unavailable ({e}).")
         return scale, notes
