@@ -44,7 +44,7 @@ python -m fishid regs check                                    # did CDFW change
 |---|---|
 | A dollar bill or credit/ID card lying flat next to the fish | about 2–3% |
 | Saved gear (e.g. your rod handle, set under *My Gear*) or two clicks on a known length | about 3–5% |
-| Nothing: distance estimated from the photo itself | rough guess only, can be far off; never used to clear a size limit |
+| Nothing of known size | no length — one photo can't tell a small fish up close from a big fish farther away. Click two points on any object you know the length of instead. |
 
 Shoot from straight above, with the whole fish in frame and lying flat. If the fish runs off the edge of
 the photo, the app reports "≥ X in" and will never say keep.
@@ -79,7 +79,7 @@ photo ─► segment (SAM 3 or YOLOE) ─► fish outlines + reference objects
 |---|---|---|
 | `FISHID_SEGMENTER` | `auto` | `sam3`, `yoloe`, or `auto` (SAM 3 if available) |
 | `FISHID_YOLOE_WEIGHTS` | `yoloe-11l-seg.pt` | any ultralytics YOLOE segmentation weights |
-| `FISHID_DEPTH` | `dav2` | depth fallback: `dav2` (Depth Anything V2 metric, fast), `depthpro` (Apple Depth Pro, needs a GPU in practice), `off` |
+| `FISHID_DEPTH` | `off` | experimental length guess with no reference: `dav2` (Depth Anything V2) or `depthpro` (Apple Depth Pro, GPU only). Off by default because in testing both overestimated close-up fish 2–4x. |
 | `FISHID_MODELS_DIR` | `./models` | where weights and caches go |
 | `FISHID_USER_DIR` | `fishid/user` | saved gear and regs-check state |
 

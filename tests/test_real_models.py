@@ -21,7 +21,7 @@ def test_real_pipeline_on_a_bass():
     ids = [s["id"] for s in fish["species"]]
     assert {"largemouth_bass", "spotted_bass", "smallmouth_bass"} & set(ids)
     assert fish["verdict"] is not None
-    # No reference object in this photo, so the length must come with a wide range.
-    if fish["length"]:
-        assert result["scale"]["source"] == "depth"
-        assert fish["verdict"] != "KEEP" or fish["length"]["low"] >= 12
+    # Nothing of known size in this photo: no length, and so no KEEP.
+    assert fish["length"] is None
+    assert fish["verdict"] != "KEEP"
+    assert any("can't be measured" in n for n in result["scale_notes"])

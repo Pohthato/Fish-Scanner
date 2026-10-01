@@ -52,7 +52,7 @@ def create_app(analyzer: Analyzer | None = None, gear_store: GearStore | None = 
             raise HTTPException(400, "Empty upload.")
         return data
 
-    def parse_args(lat, lon, water_id, on, mode, gear_ids, manual_scale, species_id) -> dict:
+    def parse_args(lat, lon, water_id, on, mode, gear_ids, manual_scale, species_id, ignore_refs=None) -> dict:
         if (lat is None) != (lon is None):
             raise HTTPException(400, "Send both lat and lon, or neither.")
         if mode is not None and mode not in MODES:
@@ -75,15 +75,17 @@ def create_app(analyzer: Analyzer | None = None, gear_store: GearStore | None = 
             raise HTTPException(400, f"Unknown species {species_id}.")
         ids = [g for g in (gear_ids or "").split(",") if g]
         return dict(lat=lat, lon=lon, water_id=water_id or None, on=day, mode=mode,
-                    gear=app.state.gear.get_many(ids), manual_scale=manual, species_id=species_id or None)
+                    gear=app.state.gear.get_many(ids), manual_scale=manual, species_id=species_id or None,
+                    ignore_refs=str(ignore_refs).lower() in ("1", "true", "yes"))
 
     async def analyze_form(image: UploadFile = File(...), lat: float | None = Form(None),
                            lon: float | None = Form(None), water_id: str | None = Form(None),
                            date: str | None = Form(None), mode: str | None = Form(None),
                            gear_ids: str | None = Form(None), manual_scale: str | None = Form(None),
-                           species_id: str | None = Form(None)) -> tuple[bytes, dict]:
+                           species_id: str | None = Form(None),
+                           ignore_refs: str | None = Form(None)) -> tuple[bytes, dict]:
         data = await read_upload(image)
-        return data, parse_args(lat, lon, water_id, date, mode, gear_ids, manual_scale, species_id)
+        return data, parse_args(lat, lon, water_id, date, mode, gear_ids, manual_scale, species_id, ignore_refs)
 
     # ------------------------------------------------------------------ analyze
     @app.post("/api/analyze")

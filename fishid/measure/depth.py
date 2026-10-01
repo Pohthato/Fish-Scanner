@@ -1,13 +1,17 @@
 """Fallback scale from monocular metric depth.
 
 With no reference object in the photo, pixels-per-inch at the fish is
-focal_length_px / distance. Expect roughly ±10–20 %.
+focal_length_px / distance.
+
+Off by default. A single photo has no absolute scale: a small fish close to
+the lens looks the same as a big fish farther away. In testing on angler
+photos these models put the fish 2–4x too far from the camera, so lengths
+came out 2–4x too long. Only turn this on to experiment.
 
 FISHID_DEPTH picks the model:
-  dav2      Depth Anything V2 metric (small, indoor-range) — a few seconds on CPU (default)
-  depthpro  Apple Depth Pro — sharper and predicts focal length, but takes
-            many minutes per photo on a laptop CPU; use with a GPU
-  off       no depth fallback
+  off       no depth fallback (default)
+  dav2      Depth Anything V2 metric (small, indoor-range) — a few seconds on CPU
+  depthpro  Apple Depth Pro — needs a GPU in practice (30+ minutes per photo on a laptop CPU)
 """
 from __future__ import annotations
 
@@ -92,7 +96,7 @@ class DepthProEstimator:
 
 
 def make_depth_estimator():
-    choice = os.environ.get("FISHID_DEPTH", "dav2").lower()
+    choice = os.environ.get("FISHID_DEPTH", "off").lower()
     if choice == "off":
         raise RuntimeError("depth fallback turned off (FISHID_DEPTH=off)")
     if choice == "depthpro":

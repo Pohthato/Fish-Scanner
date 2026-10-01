@@ -165,7 +165,8 @@ class Analyzer:
     def analyze(self, data: bytes, *, lat: float | None = None, lon: float | None = None,
                 water_id: str | None = None, on: date | None = None, mode: str | None = None,
                 gear: list[dict] | None = None, manual_scale: dict | None = None,
-                species_id: str | None = None, progress: Progress | None = None) -> dict:
+                species_id: str | None = None, ignore_refs: bool = False,
+                progress: Progress | None = None) -> dict:
         t0 = time.perf_counter()
         timings: dict[str, float] = {}
         step = progress or (lambda s: None)
@@ -204,6 +205,8 @@ class Analyzer:
             # A "reference" lying on top of a fish is usually part of the fish.
             other_masks = [m for m in masks if m.label != "fish" and m.score >= MIN_REFERENCE_SCORE
                            and all(_covered(m, f) < 0.5 for f in fish_masks)]
+            if ignore_refs:  # the user said the detected reference is wrong
+                other_masks = [m for m in other_masks if reference_for_prompt(m.label) is None]
         except RuntimeError as e:
             result["notes"].append(f"Fish detection is unavailable ({e}).")
             if not species_id:
@@ -343,9 +346,17 @@ class Analyzer:
         if scale is None and fish:
             try:
                 depth = self.slots["depth"].get()
-                scale = depth.scale_at(photo.rgb, fish[0], photo.focal_px)
-                notes.append("No reference object found — the length is a rough guess from the photo alone and "
-                             "can be far off. Put a dollar bill or card next to the fish for a real measurement.")
-            except Exception as e:
-                notes.append(f"No reference object found and depth estimate unavailable ({e}).")
+            except RuntimeError:
+                depth = None
+            if depth is None:
+                notes.append("Nothing of known size in the photo, so the length can't be measured. Click both ends "
+                             "of something you know the length of (rod handle, can, your hand span) and enter it, "
+                             "or retake the photo with a dollar bill or card beside the fish.")
+            else:
+                try:
+                    scale = depth.scale_at(photo.rgb, fish[0], photo.focal_px)
+                    notes.append("No reference object found — the length is a rough guess from the photo alone and "
+                                 "can be far off. Put a dollar bill or card next to the fish for a real measurement.")
+                except Exception as e:
+                    notes.append(f"No reference object found and depth estimate failed ({e}).")
         return scale, notes

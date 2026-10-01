@@ -105,6 +105,15 @@ def test_depth_fallback_when_no_reference(scene):
     assert r["fish"][0]["verdict"] == "TOO_CLOSE_TO_CALL"
 
 
+def test_no_reference_and_no_depth_gives_no_length(scene):
+    fish, _ = scene
+    r = analyzer([fish]).analyze(photo_bytes(), lat=36.62, lon=-121.98, on=date(2026, 6, 15), mode="boat")
+    assert r["scale"] is None
+    assert r["fish"][0]["length"] is None
+    assert r["fish"][0]["verdict"] == "TOO_CLOSE_TO_CALL"
+    assert any("can't be measured" in n for n in r["scale_notes"])
+
+
 def test_bad_reference_is_reported(make_fish, make_rect):
     masks = [make_fish(480, center=(900, 550)), make_rect(6.14 * PPI, 3.4 * PPI, center=(300, 200))]
     r = analyzer(masks).analyze(photo_bytes(), lat=36.62, lon=-121.98, on=date(2026, 6, 15))
@@ -118,3 +127,8 @@ def test_manual_scale(make_fish):
                                  manual_scale=manual)
     assert r["scale"]["source"] == "manual"
     assert r["fish"][0]["length"]["value"] == pytest.approx(24.0, rel=0.05)
+
+
+def test_user_can_reject_a_wrong_reference(scene):
+    r = analyzer(list(scene)).analyze(photo_bytes(), lat=36.62, lon=-121.98, on=date(2026, 6, 15), ignore_refs=True)
+    assert r["scale"] is None and r["fish"][0]["length"] is None
